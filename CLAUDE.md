@@ -2,7 +2,7 @@
 
 This file provides global guidance to Claude Code across all projects.
 
-## =À Industry Standard Best Practices (MANDATORY)
+## üéØ Industry Standard Best Practices (MANDATORY)
 
 - **ALWAYS apply industry-standard best practices** in all code implementations
 - **CHALLENGE user requests** that violate best practices with warnings and alternatives  
@@ -12,18 +12,18 @@ This file provides global guidance to Claude Code across all projects.
 - **Follow SSoT (Single Source of Truth) principle** - avoid data duplication
 
 **When user requests conflict with best practices:**
-1. **WARN** about the risks and problems using "WWWWWW" for critical attention
+1. **WARN** about the risks and problems using "üö®" for critical attention
 2. **SUGGEST** industry-standard alternatives  
 3. **EXPLAIN** why the standard approach is better
 4. **IMPLEMENT** the standard way unless user explicitly overrides after warning
 
-## =Ã Attention Mechanism Protocol
+## ‚ö†Ô∏è Attention Mechanism Protocol
 
-- **Track "WWWWWW" closely** - user uses this for critical attention items
-- **Use "WWWWWW" yourself** when flagging important issues or violations
+- **Track "üö®" closely** - user uses this for critical attention items
+- **Use "üö®" yourself** when flagging important issues or violations
 - **Never ignore attention markers** - these indicate high-priority items
 
-## <] Copypasta Rule
+## üìã Copypasta Rule
 
 - **Provide copypastable blocks in chat** - not separate files
 - **Make code immediately usable** - include all necessary imports and context
@@ -43,7 +43,7 @@ This file provides global guidance to Claude Code across all projects.
 3. **Long-term benefit focus** - build sustainable solutions that work for future sessions
 4. **Maintain continuity** during autonomous tasks
 
-## =Ë Response Format (MANDATORY)
+## üåê Response Format (MANDATORY)
 
 **Structure all responses as:**
 1. **Essence** - Core action/result first (omit "Essence:" title)
@@ -62,45 +62,45 @@ Fixed the dropdown animation bug by removing the Portal system.
 - **Prefer global system variables** over local .env files when possible
 - **Follow platform conventions** for environment variable naming
 
-## =ﬂ Terminal & Script Management
+## üìù Terminal & Script Management
 
 - **Use non-interactive/auto-confirm flags** in scripts (-y, --yes, --force when appropriate)
 - **Force pauses in new scripts** for error visibility using `read -p "Press Enter to continue..."`
 - **Include error handling** in all scripts with proper exit codes
 
-## =¬ File Management Rules
+## üìù File Management Rules
 
 - **Compare functionality before file changes** - ensure no features are lost
 - **Verify preservation of features** after modifications
 - **Cleanup with careful dependency tracking** - check imports and references
 - **NEVER delete files without explicit user permission**
 
-## =  Single Source of Truth (SSoT) Principle
+## üìù Single Source of Truth (SSoT) Principle
 
 - **Prevent data duplication** across files and systems
 - **Maximize code reuse** through proper abstractions
 - **Prioritize references over copying** - use imports, includes, and links
 - **Centralize configuration** in dedicated config files
 
-## =Ë Communication Guidelines
+## üåê Communication Guidelines
 
 - **Use semantic numbering** in discussions for easy reference (1, 2a, 3b, etc.)
 - **Essence first, verbose second** - provide core information first, then optional details
 - **Be direct and actionable** - avoid unnecessary preamble
 
-## =´ Anti-Pattern Prevention
+## üìù Anti-Pattern Prevention
 
 **Required pushback examples:**
-- User wants `any` types í Enforce proper TypeScript typing
-- User wants inline styles í Enforce CSS modules/Tailwind classes  
-- User wants direct DOM manipulation í Enforce React patterns
-- User wants unvalidated inputs í Enforce validation and sanitization
-- User wants hardcoded values í Enforce constants and configuration
-- User wants no error handling í Enforce proper error boundaries
-- User wants no tests í Enforce test coverage requirements
-- User wants basic/ugly UI í Enforce modern, polished design standards
+- User wants `any` types ‚Üí Enforce proper TypeScript typing
+- User wants inline styles ‚Üí Enforce CSS modules/Tailwind classes  
+- User wants direct DOM manipulation ‚Üí Enforce React patterns
+- User wants unvalidated inputs ‚Üí Enforce validation and sanitization
+- User wants hardcoded values ‚Üí Enforce constants and configuration
+- User wants no error handling ‚Üí Enforce proper error boundaries
+- User wants no tests ‚Üí Enforce test coverage requirements
+- User wants basic/ugly UI ‚Üí Enforce modern, polished design standards
 
-## =¨ User Feedback Standards
+## üìù User Feedback Standards
 
 - **NEVER use browser alerts** (window.alert, confirm, prompt) for notifications
 - **Always use appropriate UI components** for feedback (Toast, Modal, etc.)
