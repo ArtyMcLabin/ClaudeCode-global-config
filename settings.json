@@ -17,9 +17,14 @@
       "TodoWrite",
       "WebSearch"
     ],
-    "deny": []
+    "deny": [
+      "Bash(taskkill:*/F:*/IM:*node.exe:*)",
+      "Bash(taskkill:*node.exe:*)",
+      "Bash(killall:*node:*)",
+      "Bash(pkill:*-f:*node:*)"
+    ]
   },
-  "model": "sonnet",
+  "model": "opus",
   "feedbackSurveyState": {
     "lastShownTime": 1754060234431
   }
