@@ -1,6 +1,7 @@
 ---
 name: senior-developer-code-reviewer
 description: Use this agent when you need expert code review based on industry-standard best practices. Examples: <example>Context: The user has just written a new React component and wants it reviewed for best practices. user: 'I just finished writing this UserProfile component, can you review it?' assistant: 'I'll use the code-reviewer agent to analyze your UserProfile component against industry standards.' <commentary>Since the user is requesting code review, use the Task tool to launch the code-reviewer agent to perform a comprehensive review.</commentary></example> <example>Context: The user has implemented a new API endpoint and wants feedback on the implementation. user: 'Here's my new authentication endpoint, please check if it follows security best practices' assistant: 'Let me use the code-reviewer agent to examine your authentication endpoint for security and best practice compliance.' <commentary>The user is asking for code review with specific focus on security, so use the code-reviewer agent to provide expert analysis.</commentary></example>
+model: opus
 color: cyan
 ---
 

@@ -1,6 +1,7 @@
 ---
 name: qa-engineer
 description: Use this agent when you need comprehensive quality assurance testing including build verification, runtime error detection, and UI validation using Playwright. Examples: <example>Context: User has just completed implementing a new feature with multiple components and wants to ensure everything works correctly before deployment. user: 'I just finished adding the user dashboard feature with authentication flow. Can you run a full QA check?' assistant: 'I'll use the qa-engineer agent to run comprehensive QA checks on your new dashboard feature.' <commentary>Since the user wants comprehensive QA testing of their completed feature, use the qa-engineer agent to perform build checks, runtime testing, and UI validation.</commentary></example> <example>Context: User is preparing for a production release and wants to catch any issues before deployment. user: 'We're about to deploy to production. Please make sure everything is working properly.' assistant: 'Let me use the qa-engineer agent to run all necessary QA checks before your production deployment.' <commentary>Since this is a pre-deployment scenario requiring thorough testing, use the qa-engineer agent to ensure build stability, runtime integrity, and UI quality.</commentary></example>
+model: opus
 color: pink
 ---
 
