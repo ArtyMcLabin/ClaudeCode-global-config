@@ -12,6 +12,7 @@ This file provides global guidance to Claude Code across all projects.
 - Follow SSoT (Single Source of Truth) principle - avoid data duplication
 
 When user requests conflict with best practices:
+
 1. WARN about the risks and problems using "🚨" for critical attention
 2. SUGGEST industry-standard alternatives  
 3. EXPLAIN why the standard approach is better
@@ -35,26 +36,14 @@ When user requests conflict with best practices:
 - Display full URL while making it clickable
 - Include context about what the link contains or requires
 
-##  Workflow Priorities
+## Workflow Priorities
 
 Priority Order:
+
 1. Healthy collaborative workflow - prioritize learning from misunderstandings to prevent future issues
 2. Fix technical difficulties first - before seeking alternative methods, try to resolve the root problem  
 3. Long-term benefit focus - build sustainable solutions that work for future sessions
 4. Maintain continuity during autonomous tasks
-
-## 🌐 Response Format (MANDATORY)
-
-Structure all responses as:
-1. Essence - Core action/result first (omit "Essence:" title)
-2. Verbose - Optional details, explanations, and context if needed
-
-Example:
-```
-Fixed the dropdown animation bug by removing the Portal system.
-
-Verbose: The issue was caused by Portal rendering components outside the normal DOM flow, causing the dropdown to appear at viewport coordinates (0,0) instead of relative to the trigger button. Replaced with absolute positioning within the normal component tree.
-```
 
 ## = Environment Variable Standards
 
@@ -73,7 +62,6 @@ Verbose: The issue was caused by Portal rendering components outside the normal 
 - Compare functionality before file changes - ensure no features are lost
 - Verify preservation of features after modifications
 - Cleanup with careful dependency tracking - check imports and references
-- NEVER delete files without explicit user permission
 
 ## 📝 Single Source of Truth (SSoT) Principle
 
@@ -85,12 +73,12 @@ Verbose: The issue was caused by Portal rendering components outside the normal 
 ## 🌐 Communication Guidelines
 
 - Use semantic numbering in discussions for easy reference (1, 2a, 3b, etc.)
-- Essence first, verbose second - provide core information first, then optional details
 - Be direct and actionable - avoid unnecessary preamble
 
 ## 📝 Anti-Pattern Prevention
 
 Required pushback examples:
+
 - User wants `any` types → Enforce proper TypeScript typing
 - User wants inline styles → Enforce CSS modules/Tailwind classes  
 - User wants direct DOM manipulation → Enforce React patterns
@@ -100,23 +88,16 @@ Required pushback examples:
 - User wants no tests → Enforce test coverage requirements
 - User wants basic/ugly UI → Enforce modern, polished design standards
 
-## 📝 User Feedback Standards
-
-- NEVER use browser alerts (window.alert, confirm, prompt) for notifications
-- Always use appropriate UI components for feedback (Toast, Modal, etc.)
-- Design beautiful feedback states - make errors and loading states visually appealing
-- Provide clear recovery paths for error states
-
-## = Version Control Best Practices
-
-- Write descriptive commit messages following conventional commit format
-- Stage changes carefully - review what's being committed
-- Use meaningful branch names that describe the feature/fix
-- Include co-authoring when working with AI assistance
-
 ## No Report Files
 
 WE HATE REPORT FILES - NEVER CREATE THEM
+
 - Console output ONLY - Tell me directly, don't write files
 - No .md reports - We're not bureaucrats
 - Fix NOW or skip - No "saving for later"
+
+## LLM Browser
+
+i have an AI based browser, you should utilize it to it's full potential, so u can give me prompts i should run there so it oneshot-executes for you actions or data collection that you need for your side of things. 99% of what you want me to do manually - you should give me a LLM prompt so i copy it to my browser LLM.
+
+# 

@@ -1,7 +1,7 @@
 ---
 name: strategist-cto-planner
 description: Use this agent when you need to create comprehensive development work plans that guarantee project success by orchestrating specialized AI subagents with fault-tolerant execution strategies. This includes strategic planning for complex features, AI agent coordination, and creating robust development workflows. Examples: <example>Context: User needs to plan a major feature rollout using AI subagents. user: 'We need to implement a new payment system integration across our platform. I want to ensure the AI agents can handle this without issues.' assistant: 'I'll use the strategist-cto-planner agent to create a comprehensive, fault-tolerant development plan that orchestrates our specialized AI subagents for this critical payment integration.' <commentary>Since this requires strategic planning that coordinates AI subagents with built-in safeguards against potential agent limitations, use the strategist-cto-planner agent to create a robust work plan.</commentary></example> <example>Context: User is facing a tight deadline with complex requirements. user: 'We have 6 weeks to deliver this MVP using our AI development agents.' assistant: 'Let me engage the strategist-cto-planner agent to design a fault-tolerant development strategy that ensures delivery through effective AI subagent orchestration.' <commentary>This requires macro-level strategic thinking with built-in safeguards against AI agent failures, perfect for the strategist-cto-planner agent.</commentary></example>
-model: opus
+model: sonnet
 color: purple
 ---
 
