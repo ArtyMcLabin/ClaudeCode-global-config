@@ -96,8 +96,208 @@ WE HATE REPORT FILES - NEVER CREATE THEM
 - No .md reports - We're not bureaucrats
 - Fix NOW or skip - No "saving for later"
 
-## LLM Browser
+## 📋 Claude-Optimal Context Exports
 
-i have an AI based browser, you should utilize it to it's full potential, so u can give me prompts i should run there so it oneshot-executes for you actions or data collection that you need for your side of things. 99% of what you want me to do manually - you should give me a LLM prompt so i copy it to my browser LLM.
+**Design exports/logs specifically to give Claude perfect troubleshooting context**
 
-# 
+When building applications with complex state, implement "Copy Full Status" functionality that exports comprehensive debugging information designed for Claude to understand issues without additional context:
+
+### What to Include:
+
+1. **Metadata**:
+   - Script/app version
+   - Export timestamp (ISO 8601)
+   - Browser/environment info
+   - Current URL/location
+
+2. **System State**:
+   - All relevant boolean flags
+   - Current indices/positions
+   - Counters and thresholds
+   - Active processes
+
+3. **Configuration**:
+   - Active config values
+   - Timeouts and delays
+   - Thresholds and limits
+
+4. **Data Categorization**:
+   - Successful items (with details)
+   - Failed items (with error reasons)
+   - Pending items
+   - Items needing attention
+   - Current queue state
+
+5. **Debug Information**:
+   - Queue/array order with details
+   - DOM state snapshots
+   - Presence of critical elements
+
+### Export Format:
+
+- **JSON** for structured data
+- Human-readable with proper indentation (`JSON.stringify(data, null, 2)`)
+- Copy to clipboard via `navigator.clipboard.writeText()`
+- Show toast confirmation
+- Include ALL information Claude would need without user explanation
+
+### Example Implementation:
+
+```javascript
+const copyFullStatusToClipboard = async () => {
+  const statusReport = {
+    metadata: {
+      version: APP_VERSION,
+      exportTime: new Date().toISOString(),
+      browser: navigator.userAgent,
+      currentUrl: window.location.href
+    },
+    systemState: {
+      isProcessing: processingFlag,
+      currentIndex: processIndex,
+      consecutiveFailures: failureCounter
+    },
+    configuration: {
+      TIMEOUT: CONFIG.TIMEOUT,
+      MAX_RETRIES: CONFIG.MAX_RETRIES
+    },
+    summary: {
+      totalItems: items.length,
+      successful: successCount,
+      failed: failCount
+    },
+    items: {
+      successful: [...],
+      failed: [...],
+      pending: [...]
+    },
+    debugInfo: {
+      queueOrder: [...],
+      domState: {...}
+    }
+  };
+
+  await navigator.clipboard.writeText(JSON.stringify(statusReport, null, 2));
+  // Show toast notification
+};
+```
+
+### Why This Matters:
+
+- **Zero explanation needed**: User can paste JSON, Claude immediately understands full context
+- **Complete state snapshot**: No missing information, no follow-up questions
+- **Reproducible debugging**: Claude sees exact state at moment of issue
+- **Future-proof**: When facing unknown issues, extend export to include new data
+
+**Rule**: If an application has complex state that could require debugging, proactively implement Claude-optimal status export. Design it assuming you won't be there to explain - the export should tell the complete story.
+
+## LLM Browser - Last Resort Only
+
+**Priority Order for Task Execution:**
+
+1. **ALWAYS try CLI tools FIRST** - Use Bash, WebFetch, WebSearch, gh CLI, playwright, or other available tools
+2. **Attempt autonomous execution** - Fully exhaust all programmatic approaches
+3. **LLM Browser prompt as LAST RESORT** - Only when CLI tools fail or task is clearly impossible to automate
+
+**When to use LLM Browser prompts (ONLY after CLI attempts fail):**
+- Interactive website navigation that bypasses automation protections
+- JavaScript-heavy sites blocking programmatic access
+- Visual inspection requiring human-like browser behavior
+- Multi-step authentication flows that block automation
+- Tasks that explicitly failed via WebFetch/Playwright/CLI tools
+
+**What Claude should run autonomously via CLI:**
+- All bash commands (git, npm, docker, etc.)
+- Web content fetching (WebFetch, WebSearch)
+- GitHub operations (gh CLI)
+- File operations (Read, Write, Edit, Grep, Glob)
+- Testing and QA (playwright, pytest, etc.)
+- Build and deploy operations
+- API calls and scripting
+
+**Rule**: If you can run it via CLI/tools - DO IT. Browser LLM is for when automation fails, not as a first choice.
+
+## 🚀 Development Server Preferences
+
+- **Docusaurus projects**: Always use port **3070** (not the default 3000)
+  - Command: `npx docusaurus start --port 3070`
+  - Dev server URL: http://localhost:3070
+
+## 📚 Current Project: GameReady SOPs Documentation (WIP)
+
+**Project Status:** Work In Progress - Testing Docusaurus as Trello replacement
+**Location:** `~/Desktop\DocusaurusTest`
+**Goal:** Migrate 54 Standard Operating Procedures from Trello to Docusaurus for evaluation
+
+### Project Overview
+This is a **test migration** to evaluate if Docusaurus can replace Trello as GameReady's official SOP platform. The project successfully migrated all SOPs from a Trello board export and is currently operational and ready for user testing.
+
+### Trello Migration File Structure
+
+**Source Data:**
+```
+TRELLO_DUMPS/
+├── gameready-procedures.json          # 3MB Trello board export
+└── gameready-procedures_ATTACHMENTS.zip  # Images/attachments from board
+```
+
+**Migration Scripts:**
+```
+migrate-trello.js           # Main migration script (converts Trello JSON → Markdown)
+analyze-trello.js          # Analyzes Trello JSON structure
+fix-mdx-issues.js          # Fixes MDX/JSX parsing issues
+extract-images.py          # Extracts attachments from ZIP (Python)
+fix-image-links.py         # Updates image paths in markdown (Python)
+```
+
+**Generated Content:**
+```
+docs/
+├── intro.md                           # Homepage
+├── introduction/                      # 2 SOPs
+├── gameready-vision/                  # 5 SOPs
+├── general-for-all/                   # 28 SOPs
+├── general-for-all-poc-s/            # 8 SOPs
+├── additional-reads/                  # 7 SOPs
+└── other-procedures-in-boards/       # 5 SOPs
+
+static/img/sops/                       # 14 extracted images
+```
+
+**Test Suite:**
+```
+tests/
+├── navigation.spec.ts
+├── content-rendering.spec.ts
+├── image-integration.spec.ts
+├── external-links.spec.ts
+├── responsive-design.spec.ts
+├── accessibility.spec.ts
+├── performance.spec.ts
+└── edge-cases.spec.ts
+```
+
+### Key Implementation Details
+
+**Migration Process:**
+1. Parse `gameready-procedures.json` (Trello export)
+2. Extract images from ZIP file to `static/img/sops/`
+3. Convert Trello cards → Markdown with frontmatter
+4. Preserve checklists, attachments, metadata
+5. Fix MDX parsing issues (escape angle brackets, etc.)
+6. Generate category folders with `_category_.json` files
+
+**Known Limitations:**
+- Search functionality not yet implemented (can be added post-launch)
+- Some Trello image URLs returned 401 errors (images extracted from ZIP instead)
+- Mobile responsiveness tested on desktop emulation only
+
+**Current Status:**
+- ✅ All 54 SOPs migrated and accessible
+- ✅ Images integrated (14 total)
+- ✅ Build succeeds with zero errors
+- ✅ Playwright test suite configured (headless mode)
+- ✅ Site operational and ready for user testing
+- ⏳ Awaiting decision to deploy as official SOP platform
+
+#
