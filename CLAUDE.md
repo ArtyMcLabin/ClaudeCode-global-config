@@ -48,6 +48,7 @@ Priority Order:
 ## = Environment Variable Standards
 
 - Use industry-standard API key names (e.g., `OPENAI_API_KEY`, `STRIPE_SECRET_KEY`)
+- Manage secrets via CLI (gh secret set, vercel env, etc.) - don't ask user to do it manually
 - Prefer global system variables over local .env files when possible
 - Follow platform conventions for environment variable naming
 
@@ -246,10 +247,46 @@ const copyFullStatusToClipboard = async () => {
 
 **Rule**: If you can run it via CLI/tools - DO IT. Browser LLM is for when automation fails, not as a first choice.
 
+## 🌐 Chrome Agent Delegation (Context Optimization)
+
+**ALWAYS delegate browser tasks to the chrome-agent sub-agent** via the Task tool.
+
+**Why:** Screenshots and DOM trees consume massive context. The chrome-agent processes them in its own context window, returning only concise results to you. This keeps your context clean for the actual work.
+
+**When to delegate:**
+- Any task requiring `mcp__claude-in-chrome__*` tools
+- Web navigation, form filling, page scraping
+- Multi-step browser workflows
+- Visual verification tasks
+
+**How to delegate:**
+```
+Task tool with:
+- subagent_type: "chrome-agent"
+- prompt: "Navigate to [URL] and [specific task]. Return [what you need]."
+```
+
+**What you get back:**
+- Concise result (SUCCESS/FAILED + key data)
+- No screenshots
+- No DOM dumps
+- Just actionable information
+
+**Example delegation:**
+```
+"Go to Gmail, find emails from 'alex@example.com' in the last week, return a list of subject lines and dates."
+```
+
+**Exception:** Only use browser tools directly (without delegation) if you need to show the user a screenshot or share visual context with them.
+
 ## 📂 Local Git Repository Locations
 
 - `D:\GitRepos` - Primary local git repositories
 - `N:\GitReposNVME` - Secondary local git repositories (NVME drive)
+
+## 📁 Google Drive CLI Access
+
+rclone installed and authenticated as `gdrive:`. See skill: `~/.claude/skills/rclone/SKILL.md`
 
 ## 📝 CLAUDE.md Scope Rule
 
@@ -261,3 +298,27 @@ When user asks to "add something to CLAUDE.md":
 ## "I can't do it but here's how you can"
 
  If you can't do something but you know that it's possible through CLI commands, then do it yourself instead of asking me to do it. you have CLI access just like me.
+
+## 🚨 Database Migration Tools - Fix Root Causes, Never Workaround
+
+**If `drizzle-kit migrate` (or any migration tool) fails:**
+
+1. **NEVER bypass with raw SQL** (psql, direct queries, etc.)
+2. **NEVER manually apply migrations** outside the tooling
+3. **FIX THE ROOT CAUSE** of why the migration tool is failing:
+   - Debug the migration script
+   - Fix driver/connection issues
+   - Update dependencies if needed
+   - Modify migration files to be compatible
+4. **Workarounds create drift** between schema.ts, migrations, and database state
+5. **The migration tool is the SSoT** - bypassing it breaks the entire system
+
+**Why this matters:**
+- Manual SQL bypasses migration tracking → future migrations break
+- Schema drift causes silent failures and data corruption
+- CI/CD pipelines depend on migration tools working correctly
+
+**Drizzle ORM specifics:**
+- Migration tracking table: `drizzle.__drizzle_migrations` (in the `drizzle` schema, NOT `public`)
+- Always check `drizzle` schema when debugging migrations
+- Don't confuse with `public` schema tables
