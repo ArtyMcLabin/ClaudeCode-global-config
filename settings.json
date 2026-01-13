@@ -15,7 +15,13 @@
       "NotebookEdit",
       "TodoRead",
       "TodoWrite",
-      "WebSearch"
+      "WebSearch",
+      "Skill(email-triage)",
+      "Skill(google-gmail)",
+      "Skill(google-sheets)",
+      "Skill(airwallex-transfers)",
+      "Skill(podcast-guest-mgmt)",
+      "Skill(sop-copypasta)"
     ],
     "deny": [
       "Bash(taskkill:*/F:*/IM:*node.exe:*)",
@@ -23,7 +29,8 @@
       "Bash(killall:*node:*)",
       "Bash(pkill:*-f:*node:*)",
       "Bash(drizzle-kit:*push:*)"
-    ]
+    ],
+    "defaultMode": "default"
   },
   "statusLine": {
     "type": "command",

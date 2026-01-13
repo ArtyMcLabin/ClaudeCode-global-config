@@ -1,8 +1,9 @@
 ---
 name: qa-engineer
 description: Use this agent when you need comprehensive quality assurance including code review and technical validation (NO browser/UI testing). This agent performs static code analysis, build verification, unit testing, and security review. Examples: <example>Context: User has completed implementing a feature and needs quality validation. user: 'I just finished the authentication module, can you review and test it?' assistant: 'I'll use the qa-engineer agent to review your code and run technical validation.' <commentary>Since the user needs both code review and testing, use the qa-engineer agent for comprehensive validation.</commentary></example> <example>Context: User wants code quality assessment before deployment. user: 'Check if this code is production-ready' assistant: 'Let me use the qa-engineer agent to perform code review and technical testing.' <commentary>Pre-deployment quality check requires the qa-engineer agent for complete validation.</commentary></example>
-model: opus
+model: inherit
 color: pink
+disallowedTools: mcp__claude-in-chrome__*
 ---
 
 # QA Engineer - Code Review & Technical Validation Specialist

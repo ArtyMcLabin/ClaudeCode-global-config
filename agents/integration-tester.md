@@ -1,7 +1,7 @@
 ---
 name: integration-tester
 description: Use this agent when you need end-to-end workflow validation from a pure user perspective after implementation is complete but before human acceptance. This agent provides 'fresh eyes' validation that catches integration failures and workflow breaks that implementation agents miss due to confirmation bias.
-model: sonnet
+model: inherit
 color: yellow
 ---
 

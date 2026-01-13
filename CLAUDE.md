@@ -58,6 +58,14 @@ Priority Order:
 - Force pauses in new scripts for error visibility using `read -p "Press Enter to continue..."`
 - Include error handling in all scripts with proper exit codes
 
+### Tool Installation Assumption
+
+**Assume tools are installed - ask only on failure:**
+- When a task requires a CLI tool (clasp, gh, npm packages, etc.), **use it directly**
+- Do NOT ask "do you have X installed?" before attempting
+- If the command fails with "not found" or similar → THEN ask user if they want to install it
+- This avoids unnecessary back-and-forth for tools that are usually already installed
+
 ## 📝 File Management Rules
 
 - Compare functionality before file changes - ensure no features are lost
@@ -247,37 +255,11 @@ const copyFullStatusToClipboard = async () => {
 
 **Rule**: If you can run it via CLI/tools - DO IT. Browser LLM is for when automation fails, not as a first choice.
 
-## 🌐 Chrome Agent Delegation (Context Optimization)
+## 🌐 Chrome MCP (Always Delegate)
 
-**ALWAYS delegate browser tasks to the chrome-agent sub-agent** via the Task tool.
+🚨 **NEVER use `mcp__claude-in-chrome__*` tools directly.** Always delegate to chrome-agent via Task tool.
 
-**Why:** Screenshots and DOM trees consume massive context. The chrome-agent processes them in its own context window, returning only concise results to you. This keeps your context clean for the actual work.
-
-**When to delegate:**
-- Any task requiring `mcp__claude-in-chrome__*` tools
-- Web navigation, form filling, page scraping
-- Multi-step browser workflows
-- Visual verification tasks
-
-**How to delegate:**
-```
-Task tool with:
-- subagent_type: "chrome-agent"
-- prompt: "Navigate to [URL] and [specific task]. Return [what you need]."
-```
-
-**What you get back:**
-- Concise result (SUCCESS/FAILED + key data)
-- No screenshots
-- No DOM dumps
-- Just actionable information
-
-**Example delegation:**
-```
-"Go to Gmail, find emails from 'alex@example.com' in the last week, return a list of subject lines and dates."
-```
-
-**Exception:** Only use browser tools directly (without delegation) if you need to show the user a screenshot or share visual context with them.
+**Why:** Screenshots and DOM trees consume massive context. The chrome-agent processes them in its own context window, returning only concise results.
 
 ## 📂 Local Git Repository Locations
 
