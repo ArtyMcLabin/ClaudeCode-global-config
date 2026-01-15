@@ -66,6 +66,21 @@ Priority Order:
 - If the command fails with "not found" or similar → THEN ask user if they want to install it
 - This avoids unnecessary back-and-forth for tools that are usually already installed
 
+### Check Before Asking
+
+**Always verify information yourself before asking the user:**
+- **File existence:** Use Read, Glob, or Bash to check if files exist - DON'T ask "does X file exist?"
+- **Data availability:** Search for data (grep, rclone, find) before asking user for it
+- **Configuration values:** Check config files, environment variables, or documentation before asking
+- **Command availability:** Try running the command first, ask only if it fails
+- **Only ask when:** You've exhausted automated checking methods AND the answer isn't discoverable
+
+**Example:**
+- ❌ Bad: "Does `~/.claude\agents\chrome-agent.md` exist?"
+- ✅ Good: Use Read tool to check, report findings: "Found chrome-agent.md" or "chrome-agent.md doesn't exist"
+
+This minimizes user interruptions and shows initiative.
+
 ## 📝 File Management Rules
 
 - Compare functionality before file changes - ensure no features are lost
@@ -260,6 +275,46 @@ const copyFullStatusToClipboard = async () => {
 🚨 **NEVER use `mcp__claude-in-chrome__*` tools directly.** Always delegate to chrome-agent via Task tool.
 
 **Why:** Screenshots and DOM trees consume massive context. The chrome-agent processes them in its own context window, returning only concise results.
+
+**URL opening:** When user asks to "open" a URL, just launch it with `start <url>` (opens in default browser), not chrome-agent.
+
+### Batch Parallelization Protocol
+
+When chrome-agent receives repetitive tasks (N entries, N uploads, N form submissions):
+
+**Phase 1 - Evidence Gathering (First Run):**
+- Complete ONE full iteration end-to-end
+- Report steps to parent, ask user: "Did this work? Continue with remaining N-1?"
+- **Skip this phase if:** documented SOP exists, user says "we've done this before", or prior success in conversation
+
+**Phase 2 - Parallel Batch Setup:**
+- Open tabs for remaining items: `min(remaining_items, 4)` tabs
+- Navigate all to starting URL
+
+**Phase 3 - Interleaved Execution:**
+- Advance ALL tabs to each checkpoint together (not one tab at a time)
+- **Human input consolidation:** When workflow needs user input (file upload, QA, CAPTCHA):
+  1. Prepare ALL tabs to the input point
+  2. Pause ONCE with consolidated list:
+     ```
+     "All 4 entries ready for your input:
+     - Tab 1: needs ProductA.png
+     - Tab 2: needs ProductB.png
+     - Tab 3: needs ProductC.png
+     - Tab 4: needs ProductD.png
+     Complete all, then say 'continue'"
+     ```
+  3. Resume after single user confirmation
+
+**Phase 4 - Completion:**
+- Verify all tabs, report consolidated results
+- Failed tabs don't stop batch - marked and reported at end for optional retry
+
+**Anti-patterns:**
+- ❌ Processing items one-by-one with separate confirmations
+- ❌ Opening all tabs before knowing workflow works
+- ❌ Stopping entire batch when one item fails
+- ❌ Re-asking for same human input per tab
 
 ## 📂 Local Git Repository Locations
 
