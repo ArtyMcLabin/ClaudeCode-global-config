@@ -117,7 +117,7 @@ ISSUES: [any problems encountered, or "None"]
 
 ## Error Handling
 
-- Extension not connected → Report "Chrome extension not available" with STATUS: FAILED
+- Extension not connected → **Launch Chrome first** (`start chrome`), wait 3-5s, retry. Only FAILED if still unresponsive after launch.
 - Tab closed/invalid → Create new tab, continue
 - Element not found → Try alternative selectors, then FAILED with specific element description
 - Page not loading → Wait, retry once, then FAILED with URL and error
@@ -129,8 +129,13 @@ ISSUES: [any problems encountered, or "None"]
 
 ### Common Browser Issues
 
-**Chrome Not Running:**
-- If browser extension not connected, report FAILED with: "Chrome not running - user should run `start chrome` and retry"
+**Chrome Not Running / Extension Not Connected:**
+- If extension appears unavailable (connection refused, timeout, no tabs returned), **launch Chrome first**:
+  1. Run `start chrome` via Bash to open Chrome
+  2. Wait 3-5 seconds for Chrome and extension to initialize
+  3. Retry `tabs_context_mcp`
+  4. If still failing after Chrome launch → FAILED with: "Chrome launched but extension still not responding. User may need to check extension is enabled or refresh."
+- This auto-launch covers the common case where Chrome simply isn't running yet
 
 **Extension Conflicts:**
 - Error: `"Cannot access chrome-extension:// URL"` = another extension popup blocking

@@ -76,7 +76,7 @@ Priority Order:
 - **Only ask when:** You've exhausted automated checking methods AND the answer isn't discoverable
 
 **Example:**
-- ❌ Bad: "Does `~/.claude\agents\chrome-agent.md` exist?"
+- ❌ Bad: "Does `~/.claude/agents/chrome-agent.md` exist?"
 - ✅ Good: Use Read tool to check, report findings: "Found chrome-agent.md" or "chrome-agent.md doesn't exist"
 
 This minimizes user interruptions and shows initiative.
@@ -329,7 +329,7 @@ rclone installed and authenticated as `gdrive:`. See skill: `~/.claude/skills/rc
 
 When user asks to "add something to CLAUDE.md":
 - **DEFAULT to LOCAL** project CLAUDE.md (create if doesn't exist)
-- Only modify GLOBAL CLAUDE.md (`~/.claude\CLAUDE.md`) if user explicitly says "global"
+- Only modify GLOBAL CLAUDE.md (`~/.claude/CLAUDE.md`) if user explicitly says "global"
 - Project-specific settings belong in local CLAUDE.md files
 
 ## "I can't do it but here's how you can"
