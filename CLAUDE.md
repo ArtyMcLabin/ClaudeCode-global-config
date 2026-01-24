@@ -23,6 +23,9 @@ When user requests conflict with best practices:
 - Track "🚨" closely - user uses this for critical attention items
 - Use "🚨" yourself when flagging important issues or violations
 - Never ignore attention markers - these indicate high-priority items
+- **Don't list acknowledged items** - Once user acknowledges something, remove it from future status tables/reports. Showing acknowledged items again = noise.
+- **Accurate status reporting** - Don't mark items as Done/Complete until action is actually finished. Pending user answer = Pending, not Done.
+- **Number all actionable tables** - Any table where user might reference specific items (findings, recommendations, status reports) must have numbered rows for easy addressing.
 
 ## 📋 Copypasta Rule
 
@@ -30,11 +33,13 @@ When user requests conflict with best practices:
 - Make code immediately usable - include all necessary imports and context
 - Format for easy copy-paste - use proper code blocks with language markers
 
-## = Link Handling Standards
+## Link Handling Standards
 
-- Provide clickable links when asking user to do something manually
-- Display full URL while making it clickable
-- Include context about what the link contains or requires
+- When mentioning URLs **in chat** (not in code), use full clickable format
+- `http://localhost:3000/path` ✅ (clickable)
+- `/path` or `#/route` ❌ (not clickable in terminal)
+- Code uses relative paths normally - this rule is for terminal output only
+- **Always use full absolute paths** when referencing files in chat (e.g., `<LOCAL_PATH>/Project/.claude/skills/sleep/SKILL.md` not `.claude/skills/sleep/SKILL.md`)
 
 ## Workflow Priorities
 
@@ -47,6 +52,7 @@ Priority Order:
 
 ## = Environment Variable Standards
 
+- **🚨 NEVER put actual credentials in tracked files** (including CLAUDE.md) - use `.env` + gitignore, write "See .env"
 - Use industry-standard API key names (e.g., `OPENAI_API_KEY`, `STRIPE_SECRET_KEY`)
 - Manage secrets via CLI (gh secret set, vercel env, etc.) - don't ask user to do it manually
 - Prefer global system variables over local .env files when possible
@@ -81,11 +87,22 @@ Priority Order:
 
 This minimizes user interruptions and shows initiative.
 
+When stuck on a problem and must involve the user, use Dan Martell's 1-3-1 technique and proceed with the recommended option by default.
+
 ## 📝 File Management Rules
 
 - Compare functionality before file changes - ensure no features are lost
 - Verify preservation of features after modifications
 - Cleanup with careful dependency tracking - check imports and references
+
+### 🚨 Git Commands That Destroy Uncommitted Work
+
+**NEVER use these to "undo" or "remove" content:**
+- `git checkout <file>` - nukes ALL uncommitted changes in that file
+- `git restore <file>` - same as checkout
+- `git reset --hard` - nukes ALL uncommitted changes everywhere
+
+**Instead, use Edit tool** to surgically remove/change specific lines. Git operations are for committed history, not for editing working directory content.
 
 ### 🚨 CRITICAL: Never Delete User Data Files
 
@@ -112,14 +129,16 @@ This minimizes user interruptions and shows initiative.
 ## 📝 Single Source of Truth (SSoT) Principle
 
 - Prevent data duplication across files and systems
-- Maximize code reuse through proper abstractions
 - Prioritize references over copying - use imports, includes, and links
-- Centralize configuration in dedicated config files
+- **Knowledge routing** - where to put new info, skill creation, CLAUDE.md hygiene → `~/.claude/skills/knowledge-architecture/SKILL.md`
 
 ## 🌐 Communication Guidelines
 
+- **BLUF** - Answer/conclusion first, then breakdown.
+- **CTO-level by default** - Report strategic outcomes, not implementation details. User is a strategist, not a developer. Save code/technical details for when explicitly asked.
 - Use semantic numbering in discussions for easy reference (1, 2a, 3b, etc.)
 - Be direct and actionable - avoid unnecessary preamble
+- **Task completion signal** - When a topic/task is fully done, explicitly say: "Done. Retrospective?" Don't wait for user to ask "is everything done?"
 
 ## 📝 Anti-Pattern Prevention
 
@@ -278,6 +297,8 @@ const copyFullStatusToClipboard = async () => {
 
 **URL opening:** When user asks to "open" a URL, just launch it with `start <url>` (opens in default browser), not chrome-agent.
 
+**🚨 API vs Browser UI:** When delegating tasks where API can't do something (e.g., bot can't see private Slack channels), explicitly tell chrome-agent: "Use BROWSER UI only, do NOT use API calls - the user is logged in and can see things the bot API cannot."
+
 ### Batch Parallelization Protocol
 
 When chrome-agent receives repetitive tasks (N entries, N uploads, N form submissions):
@@ -316,10 +337,45 @@ When chrome-agent receives repetitive tasks (N entries, N uploads, N form submis
 - ❌ Stopping entire batch when one item fails
 - ❌ Re-asking for same human input per tab
 
+### 🧪 JS-First Clicking (Experimental)
+
+When clicking buttons/elements, prefer JavaScript over mouse clicks:
+
+**Priority order:**
+1. **javascript_tool** - Direct DOM query + click (fastest, most reliable)
+2. **read_page → ref click** - Get element ref, click by ref
+3. **Mouse click** - Last resort, use coordinates from screenshot
+
+**Why JS-first:**
+- No coordinate guessing (mouse can miss if UI shifts)
+- No accidental keyboard shortcuts (Ctrl+Enter = submit)
+- Faster (no screenshot → analyze → move mouse cycle)
+- Deterministic
+
+**Example JS click:**
+```javascript
+document.querySelector('button[data-testid="submit"]').click()
+// or find by text/aria
+document.evaluate("//button[contains(text(),'Post')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue.click()
+```
+
+### Method Reporting (Required)
+
+Chrome-agent MUST report the method used for each action:
+
+```
+✓ Typed tweet 1 via: keyboard input
+✓ Clicked + button via: javascript_tool - document.querySelector('svg path[d*="M11"]').closest('div').click()
+✓ Typed tweet 2 via: keyboard input
+✓ Clicked + button via: mouse click at [450, 320] (JS selector failed)
+```
+
+**Why:** Enables debugging, learning which methods work, and retroactive verification.
+
 ## 📂 Local Git Repository Locations
 
-- `D:\GitRepos` - Primary local git repositories
-- `N:\GitReposNVME` - Secondary local git repositories (NVME drive)
+- `<YOUR_REPOS_PATH>` - Primary local git repositories
+- `<YOUR_SECONDARY_REPOS_PATH>` - Secondary local git repositories (NVME drive)
 
 ## 📁 Google Drive CLI Access
 
@@ -335,6 +391,10 @@ When user asks to "add something to CLAUDE.md":
 ## "I can't do it but here's how you can"
 
  If you can't do something but you know that it's possible through CLI commands, then do it yourself instead of asking me to do it. you have CLI access just like me.
+
+## 🤖 Personal Assistant Delegation
+
+For admin tasks (email, calendar, Slack, contacts): invoke Claude Code in the Personal Assistant repository via Task tool.
 
 ## 🚨 Database Migration Tools - Fix Root Causes, Never Workaround
 

@@ -1,3 +1,18 @@
+---
+name: research-sop
+description: Research methodology using Claude Code + Perplexity. Use when conducting competitive research, market analysis, or any external research that requires verification. Core principle - Unknown is better than bullshit.
+triggers:
+  - "research alternatives"
+  - "compare * vs *"
+  - "evaluate competitors"
+  - "find options for"
+  - "what are the alternatives"
+  - "market research"
+  - "competitive analysis"
+  - "deep research"
+  - "Perplexity"
+---
+
 # Research SOP Skill
 
 Standard Operating Procedure for conducting research using Claude Code and Perplexity.

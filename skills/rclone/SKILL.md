@@ -1,20 +1,33 @@
 ---
 name: rclone
-description: Google Drive CLI access via rclone. Use when needing to read, write, list, or manage files on Google Drive without browser automation. Prefer this over browser for Drive operations.
+description: Google Drive CLI access via rclone. READ-ONLY for native Google formats (Sheets, Docs, Slides). Use for downloading, listing, searching Drive files.
 ---
 
 # rclone - Google Drive CLI
 
 **Tool:** rclone (open source, MIT license, 50k+ GitHub stars)
 **Traffic:** Direct PC ↔ Google API, no third-party middleman
-**Config:** `~/AppData\Roaming\rclone\rclone.conf`
+**Config:** `C:\Users\Zazi\AppData\Roaming\rclone\rclone.conf`
 **Remote name:** `gdrive:`
+
+## 🚨 Critical Limitation
+
+**rclone is READ-ONLY for native Google formats:**
+- ✅ Download/export (Sheets→xlsx, Docs→docx, Slides→pptx)
+- ✅ List, search, navigate folders
+- ✅ Upload/create regular files (pdf, xlsx, images)
+- ❌ **CANNOT create native Google Sheets/Docs/Slides**
+- ❌ **CANNOT duplicate files preserving native format**
+- ❌ **CANNOT edit Google Sheets in place**
+
+**For creating Google Sheets:** Use Chrome automation to create/duplicate, then MCP for cell manipulation.
 
 ## When to Use
 
-- Reading/fetching Google Sheets data → rclone download instead of browser
-- Any Google Drive file operations
-- Faster and more reliable than browser automation
+- Reading/fetching Google Sheets data → download as xlsx, parse locally
+- Searching for files on Drive
+- Downloading any Drive files
+- Uploading regular files (NOT native Google formats)
 
 ## Common Commands
 

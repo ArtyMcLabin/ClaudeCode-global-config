@@ -1,5 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "mcpServers": {},
   "permissions": {
     "allow": [
       "Bash",
@@ -21,14 +22,20 @@
       "Skill(google-sheets)",
       "Skill(airwallex-transfers)",
       "Skill(podcast-guest-mgmt)",
-      "Skill(sop-copypasta)"
+      "Skill(sop-copypasta)",
+      "Skill(knowledge-architecture)",
+      "Skill(skill-creation)"
     ],
     "deny": [
       "Bash(taskkill:*/F:*/IM:*node.exe:*)",
       "Bash(taskkill:*node.exe:*)",
       "Bash(killall:*node:*)",
       "Bash(pkill:*-f:*node:*)",
-      "Bash(drizzle-kit:*push:*)"
+      "Bash(drizzle-kit:*push:*)",
+      "mcp__google-workspace__drive_search",
+      "mcp__google-workspace__drive_findFolder",
+      "mcp__google-workspace__drive_createFolder",
+      "mcp__google-workspace__drive_downloadFile"
     ],
     "defaultMode": "default"
   },
@@ -37,8 +44,5 @@
     "command": "input=$(cat); model=$(echo \"$input\" | jq -r '.model.display_name'); cwd=$(echo \"$input\" | jq -r '.workspace.current_dir'); style=$(echo \"$input\" | jq -r '.output_style.name'); printf \"\\033[2m%s\\033[0m \\033[36m%s\\033[0m \\033[33m%s\\033[0m\" \"$model\" \"$(basename \"$cwd\")\" \"[$style]\""
   },
   "alwaysThinkingEnabled": true,
-  "feedbackSurveyState": {
-    "lastShownTime": 1754060234431
-  },
   "model": "opus"
 }

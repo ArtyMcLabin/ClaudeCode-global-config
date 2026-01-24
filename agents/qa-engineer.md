@@ -186,8 +186,42 @@ pnpm ls --depth 0
 - **Delegate UI testing** - NEVER run browser tests
 - **Evidence required** - no assumptions or "looks good"
 
+## TDD Compliance Verification
+
+**Before running tests, verify tests EXIST for the changes:**
+
+1. Check Developer's "Tests written: YES/NO" in their report
+2. Check Developer's "Tests executed: X passed, Y failed"
+3. If tests missing for behavior changes → **Flag to CTO**
+
+**Push back on "no logic" excuses.** Most changes affect behavior and are testable:
+- Config changes (staleTime, etc.) → Source verification tests
+- Event handlers → Source verification tests
+- UI behavior → Playwright focused tests
+
+Include in your report:
+```
+### TDD Compliance
+- Tests written by Developer: YES/NO
+- Tests executed: [X passed, Y failed]
+- Test coverage adequate: YES/NO/NEEDS MORE
+- Gaps identified: [list any untested behavior]
+```
+
 ## Integration with Other Agents
 
-**From Developer:** Receive implementation for review
+**From Developer:** Receive implementation for review (verify TDD compliance)
 **To Integration:** Pass ALL browser/UI testing with evidence
-**To CTO:** Report combined review + test results for decision
+**To CTO:** Report combined review + test results + TDD compliance for decision
+
+## Human QA Suggestion
+
+When you identify issues that would benefit from human verification, include a suggestion in your report:
+
+```
+### Human QA Suggestion
+- Recommend human QA: YES/NO
+- Reason: [why human eyes would catch what AI might miss]
+```
+
+**Note:** CTO makes the final decision on human QA. You only suggest based on your findings.

@@ -1,6 +1,6 @@
 ---
 name: slack
-description: Send Slack messages via API (channels, DMs, notifications). Use when needing to post to Slack channels or send DMs programmatically.
+description: ALL Slack operations. Use for ANY task involving Slack - messages, channels, members, workspaces, invites, permissions, history, reactions, threads, DMs, bots, apps, settings. If the word "Slack" appears in the request, use this skill.
 ---
 
 # Slack Messaging
@@ -8,6 +8,11 @@ description: Send Slack messages via API (channels, DMs, notifications). Use whe
 **Purpose:** Send Slack messages via API (channels, DMs, notifications).
 
 **Credential location:** `~/.claude/.env` (gitignored) - contains workspace tokens.
+
+**References:**
+- `references/workspace-setup.md` - Workspace configs, domain auto-join, bot capabilities, full scope list
+
+🚨 **API first:** Use Slack API (curl) for ALL messaging operations. Chrome-agent only for admin UI actions (workspace settings, user invites on non-Enterprise plans).
 
 ---
 
@@ -39,6 +44,13 @@ curl -X POST "https://slack.com/api/chat.postMessage" \
   -H "Content-Type: application/json; charset=utf-8" \
   --data '{"channel":"#channel-name","text":"Message text"}'
 ```
+
+**🚨 After posting, ALWAYS provide message link to user:**
+```
+https://{workspace}.slack.com/archives/{channel_id}/p{ts_without_dot}
+```
+- `ts` from response: `1769193392.153219` → remove dot → `p1769193392153219`
+- Example: `https://gameready.slack.com/archives/C0A360Y6AVD/p1769193392153219`
 
 ### Send DM to User
 
@@ -93,6 +105,22 @@ curl -X POST "https://slack.com/api/conversations.join" \
 - For channels: Use `#channel-name` format
 - For DMs: Use `@username` or user ID
 - Check workspace - token must match workspace where channel exists
+- **Private channels:** Bot can't see private channels it's not a member of. Use Chrome to add bot first (see below)
+
+### Private Channel Access
+
+**Problem:** API returns `channel_not_found` for private channels bot isn't in. API can't list them either.
+
+**Solution:** Use Chrome automation to add bot via browser UI (user IS logged in and CAN see the channel):
+
+1. Navigate to Slack workspace in browser
+2. Click on the private channel in sidebar
+3. Click channel name → Integrations → Add apps
+4. Search "PA Bot" → Add
+5. Get channel ID from URL: `/client/TEAM_ID/CHANNEL_ID`
+6. Now API works for that channel
+
+**🚨 Don't give up:** If Chrome fails once, try again with different approach. Don't fall back to asking user for manual steps.
 
 ### `invalid_auth` Error
 
@@ -132,6 +160,11 @@ curl -X POST "https://slack.com/api/chat.postMessage" \
 {"channel":"#general","text":"Hello"}
 EOF
 ```
+
+**🚨 Special characters get garbled:** Bullets (•), arrows (→), emojis may render as `?` in Slack. Use ASCII alternatives:
+- `•` → `-` or `*`
+- `→` → `->`
+- Or use Slack's built-in emoji syntax: `:arrow_right:`, `:white_check_mark:`
 
 ---
 
@@ -174,6 +207,21 @@ When creating a new Slack App, add these scopes under OAuth & Permissions → Bo
 | `users:read` | List users (for DMs) |
 
 **🚨 Note:** `channels:write` no longer exists in Slack API - use `channels:manage` instead.
+
+---
+
+# GameReady Workflows
+
+**Workspace:** GameReady (`gameready.slack.com`)
+**Token:** `SLACK_GAMEREADY_TOKEN`
+**Team ID:** `T0A3HPDEG1K`
+
+## Channel Reference
+
+| Channel | ID | Purpose | Notes |
+|---------|-----|---------|-------|
+| `#all-gameready` | `C0A3EQXBM5Z` | General announcements | Public, bot is member |
+| `#managers` | `C0A360Y6AVD` | Managers-only discussions | Private, bot added 2026-01-23 |
 
 ---
 
@@ -318,4 +366,4 @@ curl -s -X POST "https://slack.com/api/chat.postMessage" \
 
 ---
 
-**Last updated:** 2026-01-16
+**Last updated:** 2026-01-23

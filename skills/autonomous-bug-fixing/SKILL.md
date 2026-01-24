@@ -1,447 +1,302 @@
 ---
 name: autonomous-bug-fixing
-description: SOP for autonomous bug detection, diagnosis, and fixing without human intervention. Use when treating GitHub issues or when assessing repository readiness for autonomous maintenance.
+description: Orchestration overview for the autonomous bug fixing system. References the component skills (dispatcher, handler) and per-project skills (bug-intake, qa-submission).
 ---
 
-# Autonomous Bug Fixing - Standard Operating Procedure
+# Autonomous Bug Fixing System
 
-## Philosophy
+## Goal
 
-**Goal:** Claude Code should be able to receive a bug report, diagnose it, fix it, test it, and push the fix - all without human intervention.
+Claude Code receives a bug report, diagnoses it, fixes it, tests it, and notifies the reporter - all without human intervention (except final QA approval).
 
-**Reality:** Most bug reports are vague. Users say "it broke" not "the JSON parser failed on line 42 because the LLM returned markdown instead of raw JSON."
-
-**Solution:** Don't rely on detailed bug reports. Build infrastructure that lets Claude Code self-diagnose:
-- **Comprehensive logging** that captures inputs, outputs, and errors
-- **E2E tests** that can reproduce and verify fixes
-- **Queryable error trails** so Claude Code can investigate
-
-## The Workflow
+## System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  User/Tester                                                    │
-│  "Caption generation broke on my video"                         │
+│  CHANNELS (Slack/Email/GitHub/etc.)                             │
+│  #bug-reports: "Caption generation is broken"                   │
+│  #qa-review: "Rejected - still broken" / "Approved"             │
 └─────────────────────┬───────────────────────────────────────────┘
-                      │ email
+                      │
                       ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  Personal Assistant AI                                          │
-│  Creates GitHub issue from email                                │
-│  (Basic info: what failed, when, any error message shown)       │
+│  BUG INTAKE (per-project)                                       │
+│  Scans BOTH channels for actionable items:                      │
+│                                                                 │
+│  From #bug-reports (new issues):                                │
+│  - Create GitHub issue with source reference                    │
+│  - Notify reporter: "Documented as #123"                        │
+│  - Route to → Dispatcher                                        │
+│                                                                 │
+│  From #qa-review (QA responses):                                │
+│  - Rejection: Update issue → Route directly to CTO (skip Handler)│
+│  - Approval: Close issue → Notify reporter in #bug-reports      │
+│                                                                 │
+│  Skill: .claude/skills/bug-intake/SKILL.md                      │
 └─────────────────────┬───────────────────────────────────────────┘
-                      │ GitHub issue
+                      │
+        ┌─────────────┴─────────────┐
+        ▼                           ▼
+   NEW ISSUES                  QA REJECTION
+        │                           │
+        ▼                           │
+┌───────────────────────────┐       │
+│  ISSUE DISPATCHER (global)│       │
+│  - Triage queue, hygiene  │       │
+│  - Prioritize actionable  │       │
+│  - Invoke Handler         │       │
+└───────────┬───────────────┘       │
+            │                       │
+            ▼                       │
+┌───────────────────────────┐       │
+│  ISSUE HANDLER (global)   │       │
+│  - Query logs, diagnose   │       │
+│  - Reproduce via test     │       │
+│  - Package for CTO        │       │
+└───────────┬───────────────┘       │
+            │                       │
+            └───────────┬───────────┘
+                        ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  CTO AGENT (global)                                             │
+│  - Developer: implements fix                                    │
+│  - QA Engineer: code review + tests                             │
+│  - Integration Tester: E2E validation                           │
+│  - Completion Gate: verify all criteria                         │
+│  Agent: strategic-cto-planner                                   │
+└─────────────────────┬───────────────────────────────────────────┘
+                      │
                       ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  Repository Claude Code (this skill)                            │
-│  1. Read issue                                                  │
-│  2. Query logs to find actual error                             │
-│  3. Reproduce via E2E test                                      │
-│  4. Fix the code                                                │
-│  5. Run E2E to verify                                           │
-│  6. Push to master                                              │
-│  7. Close issue with explanation                                │
+│  QA SUBMISSION (per-project)                                    │
+│  - Post to #qa-review: "Fix ready for QA"                       │
+│  - Include source reference + issue link                        │
+│  - Human responds in thread (approve/reject)                    │
+│  Skill: .claude/skills/qa-submission/SKILL.md                   │
 └─────────────────────────────────────────────────────────────────┘
+                      │
+                      ▼
+            ┌─────────────────┐
+            │  Human reviews  │
+            │  in #qa-review  │
+            └────────┬────────┘
+                     │
+     ┌───────────────┴───────────────┐
+     ▼                               ▼
+  APPROVED                       REJECTED
+     │                               │
+     ▼                               ▼
+  Bug Intake                    Bug Intake
+  sees approval                 sees rejection
+     │                               │
+     ▼                               ▼
+  Close issue                   Route to CTO
+  Notify reporter               (skip Handler)
+  in #bug-reports               Iterate on fix
 ```
 
-## Repository Requirements
+---
 
-For autonomous bug fixing to work, each repository needs:
+## Component Responsibilities
 
-### 1. Error Logging Infrastructure
+### Global Components (Uniform Across All Repos)
 
-**Principle:** Every operation that can fail should log enough context to diagnose WHY it failed.
+| Component | Purpose | Invokes |
+|-----------|---------|---------|
+| **Issue Dispatcher** | Queue triage, hygiene, prioritization | Issue Handler |
+| **Issue Handler** | Diagnosis, reproduction, evidence | CTO Agent |
+| **CTO Agent** | Fix implementation, testing, deployment | QA Submission |
 
-| What to Log | Why |
-|-------------|-----|
-| Full input (request body, parameters) | Reproduce the exact scenario |
-| Full output (response, return value) | See what actually happened |
-| Error type and message | Classify the failure |
-| Stack trace | Locate the code path |
-| Timestamp | Correlate with user reports |
-| User/session ID | Find the specific failing request |
+### Per-Project Components (Customized Per Repo)
 
-**For AI/LLM operations specifically:**
-- Full rendered prompt sent
-- Raw LLM response received
-- Parse success/failure
-- Parse error details if failed
+| Component | Purpose | Project Defines |
+|-----------|---------|-----------------|
+| **Bug Intake** | Receive reports, create issues, notify | Channel (Slack/email), notification format |
+| **QA Submission** | Submit for review, notify reporter | QA process, notification channel |
 
-### 2. E2E Test Coverage
+---
 
-**Principle:** If it can break, there should be a test that exercises it.
+## Trigger Mechanisms
 
-E2E tests serve dual purposes:
-1. **Reproduction** - Create the failing scenario programmatically
-2. **Verification** - Confirm the fix works
+Bug Intake can be triggered in multiple ways:
 
-Tests should:
-- Create their own test data (no external dependencies)
-- Cover both happy path and known failure modes
-- Be runnable via CLI (`npm test`, `pytest`, etc.)
+| Trigger | When | Command |
+|---------|------|---------|
+| **Manual** | On-demand by operator | "Scan for bug reports" / "Check QA responses" |
+| **Daily scheduled** | Morning or night cron | Future: automated daily run |
+| **Webhook** | Real-time on new message | Future: Slack webhook triggers scan |
 
-### 3. Queryable Logs
+**Current implementation:** Manual trigger only. Design is compatible with future automation.
 
-Logs must be queryable by Claude Code, not just visible in dashboards.
-
-Options by tech stack:
-- **Database table** (preferred) - `SELECT * FROM error_logs WHERE...`
-- **Structured log files** - JSON logs that can be grepped
-- **Log aggregation API** - If using external service, provide query access
-
-### 4. Direct Database Access
-
-Claude Code needs to query:
-- Error/audit logs
-- Related entities (what content entry failed?)
-- Configuration (what settings were active?)
-
-Provide read access credentials or CLI tools.
-
-## Autonomous Fix Procedure
-
-When treating a GitHub issue:
-
-### Step 1: Assess Information Sufficiency
-
+**Manual trigger commands:**
 ```
-Can I answer these questions?
-├── WHAT failed? (which feature/endpoint)
-├── WHEN did it fail? (timestamp or recency)
-├── WHO experienced it? (user/session ID)
-└── Any ERROR shown to user?
+"Scan for new bug reports"        → Check #bug-reports for unaddressed items
+"Check QA responses"              → Check #qa-review for approve/reject responses
+"Run intake scan"                 → Check both channels
 ```
 
-If basic info is missing, check if logs can fill the gaps.
+---
 
-### Step 2: Query Logs
+## Loop-Back Notifications
 
-```sql
--- Example: Find recent failures
-SELECT * FROM error_logs
-WHERE feature = 'caption_generation'
-  AND status = 'error'
-  AND created_at > NOW() - INTERVAL '24 hours'
-ORDER BY created_at DESC;
+The reporter receives updates at key milestones:
+
+| Milestone | Who Notifies | Channel | Message |
+|-----------|--------------|---------|---------|
+| Bug documented | Bug Intake | #bug-reports | "Created issue #123" |
+| Fix in QA | QA Submission | #qa-review | "Ready for QA: [issue link]" |
+| QA approved | Bug Intake | #bug-reports | "Resolved and deployed" |
+| QA rejected | Bug Intake | #qa-review | Acknowledgment, then routes to CTO |
+
+**Channel flow:**
+1. Reporter posts in #bug-reports → Bug Intake replies with issue link
+2. Fix ready → QA Submission posts in #qa-review
+3. Human responds in #qa-review (approve/reject)
+4. Bug Intake sees response:
+   - Approved → notify reporter in #bug-reports, close issue
+   - Rejected → route to CTO for iteration
+
+**Source reference storage:** Bug Intake stores original report location (Slack thread URL) in GitHub issue metadata. This enables loop-back to the correct thread.
+
+---
+
+## Invocation Patterns
+
+### Full Intake Scan (Recommended Entry Point)
+
+```
+"Run intake scan" / "Scan for bug reports and QA responses"
 ```
 
-Look for:
-- The specific failing request
-- The actual error (not user-reported symptoms)
-- Patterns (is it one user or everyone? one input type or all?)
+1. Bug Intake scans #bug-reports for new unaddressed reports
+2. Bug Intake scans #qa-review for approve/reject responses
+3. New reports → create issues → Dispatcher → Handler → CTO
+4. Rejections → route directly to CTO (skip Handler)
+5. Approvals → close issues → notify reporter
 
-### Step 3: Reproduce
+### Manual Trigger Points
 
-Write or run E2E test that triggers the bug:
+| Command | Starts At | Use When |
+|---------|-----------|----------|
+| "Run intake scan" | Bug Intake | Full channel scan |
+| "Scan for new bug reports" | Bug Intake | Only check #bug-reports |
+| "Check QA responses" | Bug Intake | Only check #qa-review |
+| "Check pending issues" / "Find low-hanging fruit" | Dispatcher | Triage GitHub queue |
+| "Diagnose issue #71" | Handler | Investigate specific issue |
+| "Fix issue #71" | CTO Agent | Known diagnosis, ready to fix |
+| "Submit #71 for QA" | QA Submission | Ready for human review |
 
-```typescript
-test('reproduces issue #123 - caption parse failure', async () => {
-  // Create test data matching the failing scenario
-  const entry = await createTestEntry({ transcript: '...' });
+### Skip Layers When Appropriate
 
-  // Trigger the operation
-  const result = await generateCaptions(entry.id);
+- **Direct GitHub issue:** Skip Bug Intake (no Slack notification needed)
+- **QA rejection:** Skip Handler → straight to CTO (diagnosis exists)
+- **Known diagnosis:** Skip Handler → straight to CTO
+- **Simple fix:** Handler notes "trivial" → CTO may fast-track
 
-  // This should fail before fix, pass after
-  expect(result.status).toBe('success');
-});
-```
+### Future Automation Triggers
 
-If reproduction fails (can't trigger the bug), report this as a blocker.
+| Trigger Type | Implementation | Status |
+|--------------|----------------|--------|
+| Daily scheduled | Cron job runs "Run intake scan" | 🔮 Future |
+| Webhook on Slack message | Slack app triggers scan | 🔮 Future |
+| GitHub issue created | Webhook triggers Dispatcher | 🔮 Future |
 
-### Step 4: Fix
-
-Apply minimal fix that addresses root cause. Common patterns:
-
-| Error Type | Typical Fix |
-|------------|-------------|
-| Parse error | Add defensive parsing, handle edge cases |
-| Null/undefined | Add null checks, validate inputs |
-| Timeout | Add retry logic, increase timeout |
-| Auth error | Check token refresh, permissions |
-| Rate limit | Add backoff, queue requests |
-
-### Step 5: Verify (TDD Gate)
-
-**Tests MUST pass before ANY commit.**
-
-Run the reproduction test - it should now pass.
-Run full E2E suite - ensure no regressions.
-
-### Step 6: Push, Verify Deploy, Close
-
-```bash
-git add .
-git commit -m "fix: Handle edge case in caption parsing (#123)
-
-Root cause: LLM occasionally returns markdown-wrapped JSON.
-Added detection and stripping of markdown code fences.
-
-Closes #123
-
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
-git push origin master
-```
-
-**Verify deployment succeeded** (check repo's CLAUDE.md for platform):
-
-| Platform | Verification |
-|----------|--------------|
-| Vercel | `vercel ls` -> wait for "Ready" |
-| AWS/GCP | Check deployment status via CLI |
-| Self-hosted | Verify health endpoint responds |
-
-**Only after deployment is confirmed:**
-```bash
-gh issue close 123 --comment "Fixed in [commit]. Deployed and verified."
-```
-
-## Reporting Blockers
-
-If autonomous fixing is NOT possible, report WHY in the issue:
-
-### Blocker Types
-
-**Insufficient Logging**
-```
-BLOCKER: Cannot diagnose this issue autonomously.
-
-Missing: No logging for caption generation failures.
-The error "parse failed" is shown to users but the actual
-LLM response that failed to parse is not captured.
-
-Required: Implement generation_logs table (see issue #10)
-```
-
-**No Reproduction Path**
-```
-BLOCKER: Cannot reproduce this issue.
-
-The bug report says "video-2 failed" but:
-- No content_entry_id provided
-- Cannot identify which entry "video-2" refers to
-- No test fixture exists for this scenario
-
-Required: Either provide entry ID, or add E2E test that
-creates similar content and triggers generation.
-```
-
-**Missing E2E Coverage**
-```
-BLOCKER: Cannot verify fix safely.
-
-The failing feature (bulk caption generation) has no E2E tests.
-I can write a fix but cannot confirm it works without manual testing.
-
-Required: E2E test for bulk caption generation flow.
-```
-
-**No Database Access**
-```
-BLOCKER: Cannot query error logs.
-
-Error logs exist in [Vercel/Datadog/etc] but I don't have
-query access. Cannot investigate root cause.
-
-Required: Either provide log query access, or implement
-database-backed logging that I can query via SQL.
-```
+---
 
 ## Repository Readiness Checklist
 
-Use this to assess if a repo is ready for autonomous bug fixing:
+For autonomous bug fixing to work, each repo needs:
+
+### Infrastructure (Technical)
 
 ```
 [ ] Error logging captures full context (inputs, outputs, errors)
-[ ] Logs are queryable (database table or structured files)
+[ ] Logs are queryable (database or structured files)
 [ ] E2E tests exist for critical paths
-[ ] E2E tests can be run via CLI
-[ ] Database credentials available for log queries
-[ ] Git push access to main branch
+[ ] E2E tests runnable via CLI
+[ ] Database read access for log queries
 [ ] CI/CD runs tests before deploy
 ```
 
-## Tech-Stack-Agnostic Principles
-
-This SOP applies regardless of stack. Implementations vary:
-
-| Principle | Node/JS | Python | Go |
-|-----------|---------|--------|----|
-| Error logging | Winston/Pino + DB | logging + SQLAlchemy | zerolog + GORM |
-| E2E tests | Playwright/Jest | pytest | go test |
-| Query logs | Drizzle/Prisma | SQLAlchemy | database/sql |
-
-The concepts remain constant:
-1. Log everything needed to diagnose
-2. Make logs queryable
-3. Have tests that can reproduce
-4. Verify fixes before pushing
-
-## Continuous Improvement
-
-After fixing a bug autonomously, consider:
-
-1. **Add E2E test** for this specific failure mode
-2. **Improve logging** if diagnosis was difficult
-3. **Update error messages** shown to users (more specific = better reports)
-4. **Document pattern** if it's a recurring issue type
-
-Each bug fixed makes the next one easier.
-
----
-
-# Implementation Guide
-
-## Setting Up a New Repository
-
-When tasked with making a repository ready for autonomous bug fixing:
-
-### Step 1: Discover the Stack
-
-Before implementing anything, understand:
-- Language/framework?
-- Database type? (SQL, NoSQL, file-based, none?)
-- Existing test framework?
-- Existing logging solution?
-- Deployment method?
-
-Read CLAUDE.md, dependency files, and project structure first.
-
-### Step 2: Gap Analysis
-
-Assess and create GitHub issues for each gap:
+### Skills (Context Engineering)
 
 ```
-LOGGING INFRASTRUCTURE
-[ ] Is there centralized error/audit logging?
-[ ] Does it capture: input, output, error, timestamp, entity IDs?
-[ ] For AI/LLM features: are prompts and responses logged?
-[ ] Can Claude Code query it? (not just view in dashboard)
-
-E2E TEST COVERAGE
-[ ] Is a test framework configured?
-[ ] What critical paths have tests?
-[ ] What critical paths are MISSING tests?
-[ ] Can tests run via single CLI command?
-
-DATABASE/LOG ACCESS
-[ ] Can Claude Code connect and query?
-[ ] What credentials/tools are available?
-
-CI/CD
-[ ] Are tests run before deploy?
-[ ] Can Claude Code push to main/master or need PR?
+[ ] .claude/skills/bug-intake/SKILL.md - defines intake channel + notifications
+[ ] .claude/skills/qa-submission/SKILL.md - defines QA process + notifications
 ```
 
-### Step 3: Implement Logging
+### GitHub Setup
 
-**Required data points (storage mechanism varies by stack):**
-
-| Field | Purpose |
-|-------|---------|
-| operation_type | Category: 'api', 'llm', 'job', etc. |
-| operation_name | Specific: 'generate_captions', 'send_email' |
-| entity_type + entity_id | What record this relates to |
-| user_id / org_id | Who triggered it |
-| request_data | Full input |
-| status | 'success', 'error', 'timeout', etc. |
-| response_data | Full output (on success) |
-| error_message | Human-readable error |
-| error_details | Stack trace, raw error |
-| duration_ms | How long it took |
-| timestamp | When |
-
-**For AI/LLM operations, also capture:**
-- Full rendered prompt (system + user)
-- Raw response (before parsing)
-- Model identifier
-- Token counts
-
-**Integration approach:** Use a wrapper/decorator/middleware pattern appropriate to the language. Don't scatter logging calls - centralize them.
-
-### Step 4: Add E2E Tests
-
-**Prioritize tests for:**
-1. Features users complain about
-2. External service integrations (APIs, LLMs, payments)
-3. Complex logic with multiple failure modes
-
-**Each test should:**
-- Create its own test data
-- Exercise the operation
-- Assert success case
-- Have variant(s) for failure modes
-- Clean up after
-
-### Step 5: Document in CLAUDE.md
-
-Add to the repo's CLAUDE.md:
-
-```markdown
-## Autonomous Bug Fixing Readiness
-
-### Logging
-- **Storage:** [where logs live]
-- **Query command:** [how to query failures]
-
-### E2E Tests
-- **Run all:** [command]
-- **Run specific:** [command]
-
-### Database Access
-- **Connection:** [how]
-- **Query tool:** [what]
-
-### Critical Paths Covered
-- [x] [covered feature]
-- [ ] [TODO feature]
+```
+[ ] Project board with status columns (Todo, Doing, QA, Done, Backlog)
+[ ] Labels for categorization (bug, enhancement, security, etc.)
+[ ] needs-qa label for QA tracking
 ```
 
 ---
 
-## Maintenance Mode
+## Failure Modes & Recovery
 
-When invoked to check and treat issues:
+### Handler Blocked (Can't Diagnose)
 
-### Daily Maintenance Sequence
+**Symptom:** Missing logs, can't reproduce, no test coverage.
 
-1. **List open issues:**
-   ```
-   gh issue list --state open --json number,title,createdAt,labels
-   ```
+**Recovery:**
+1. Handler reports blocker type
+2. Dispatcher may ask Bug Intake to request more info from reporter
+3. Create infrastructure gap issue if systemic
 
-2. **For each issue:**
-   - Enough info to diagnose?
-   - Can query logs for context?
-   - Can reproduce via E2E?
+### CTO Blocked (Can't Fix)
 
-3. **Take action:**
-   - Fixable → Fix, test, push, close
-   - Blocked → Comment with blocker
-   - Needs info → Comment with questions
+**Symptom:** Requires architectural change, external dependency, unclear requirements.
 
-4. **Report summary:**
-   ```
-   Issues processed: X
-   - Fixed: [list]
-   - Blocked: [list with reasons]
-   - Needs info: [list]
-   ```
+**Recovery:**
+1. CTO reports blocker
+2. Issue moves to "blocked" status
+3. Dispatcher skips on future runs until unblocked
 
-### Infrastructure Gap Issues
+### QA Rejected
 
-When blocked by missing infrastructure, create issue:
+**Symptom:** Fix doesn't work, introduces regression, incomplete.
 
-```markdown
-## Infrastructure Gap: [Type]
+**Recovery:**
+1. Human posts rejection in #qa-review thread
+2. Bug Intake sees rejection during next scan (or webhook trigger)
+3. Bug Intake routes directly to CTO (skips Handler - diagnosis still valid)
+4. CTO iterates on fix
+5. QA Submission re-posts to #qa-review
+6. Cycle repeats until approved
 
-**Context:** Blocked while attempting issue #X
+### Reporter Unresponsive
 
-**Gap:** [What's missing]
+**Symptom:** Asked for more info, no response.
 
-**Required:**
-- [What to implement]
-- [Acceptance criteria]
+**Recovery:**
+1. Wait threshold (e.g., 7 days)
+2. Dispatcher marks as stale
+3. Eventually close with "unable to reproduce, please reopen with details"
 
-**Blocks:** [Category of bugs this affects]
-```
+---
+
+## Metrics (Future)
+
+Track system health:
+
+| Metric | Target |
+|--------|--------|
+| Intake → Closed (median) | < 48 hours |
+| Handler diagnosis rate | > 80% (can diagnose) |
+| QA first-pass rate | > 90% (pass on first try) |
+| Reporter satisfaction | Notified at all milestones |
+
+---
+
+## Related Skills
+
+| Skill | Location | Purpose |
+|-------|----------|---------|
+| issue-dispatcher | `~/.claude/skills/issue-dispatcher/` | Queue triage |
+| issue-handler | `~/.claude/skills/issue-handler/` | Diagnosis |
+| bug-intake | `.claude/skills/bug-intake/` (per-project) | Intake + notification |
+| qa-submission | `.claude/skills/qa-submission/` (per-project) | QA + notification |
+| strategic-cto-planner | `~/.claude/agents/` | Fix orchestration |
