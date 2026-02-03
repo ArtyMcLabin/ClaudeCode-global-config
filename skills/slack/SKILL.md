@@ -14,6 +14,14 @@ description: ALL Slack operations. Use for ANY task involving Slack - messages, 
 
 🚨 **API first:** Use Slack API (curl) for ALL messaging operations. Chrome-agent only for admin UI actions (workspace settings, user invites on non-Enterprise plans).
 
+## Authentication (Browser)
+
+**🚨 All Slack workspaces use `<YOUR_EMAIL>`** — this is the admin account and the active user across ALL workspaces.
+
+- **Never use** `ceo@<company_a>.yourcompany.com` or any work domain email for Slack browser login
+- Work domain emails may exist as dummy/integration users in some workspaces — they are NOT the admin and NOT the active user
+- When chrome-agent needs Slack login, always authenticate with `<YOUR_EMAIL>`
+
 ---
 
 ## Quick Start
@@ -23,7 +31,7 @@ description: ALL Slack operations. Use for ANY task involving Slack - messages, 
 source ~/.claude/.env
 
 # 2. Choose workspace token
-export SLACK_TOKEN="$SLACK_BORZAI_TOKEN"    # or SLACK_GAMEREADY_TOKEN, etc.
+export SLACK_TOKEN="$SLACK_<WORKSPACE_B>_TOKEN"    # or SLACK_<WORKSPACE_A>_TOKEN, etc.
 
 # 3. Send message
 curl -X POST "https://slack.com/api/chat.postMessage" \
@@ -50,7 +58,7 @@ curl -X POST "https://slack.com/api/chat.postMessage" \
 https://{workspace}.slack.com/archives/{channel_id}/p{ts_without_dot}
 ```
 - `ts` from response: `1769193392.153219` → remove dot → `p1769193392153219`
-- Example: `https://gameready.slack.com/archives/C0A360Y6AVD/p1769193392153219`
+- Example: `https://<workspace_a>.slack.com/archives/<CHANNEL_ID>/p1769193392153219`
 
 ### Send DM to User
 
@@ -171,7 +179,7 @@ EOF
 ## Available Workspaces
 
 Check `~/.claude/.env` for available tokens. Common pattern:
-- `SLACK_<WORKSPACE>_TOKEN` - e.g., `SLACK_BORZAI_TOKEN`, `SLACK_GAMEREADY_TOKEN`
+- `SLACK_<WORKSPACE>_TOKEN` - e.g., `SLACK_<WORKSPACE_B>_TOKEN`, `SLACK_<WORKSPACE_A>_TOKEN`
 
 ---
 
@@ -210,44 +218,46 @@ When creating a new Slack App, add these scopes under OAuth & Permissions → Bo
 
 ---
 
-# GameReady Workflows
+# <COMPANY_A> Workflows
 
-**Workspace:** GameReady (`gameready.slack.com`)
-**Token:** `SLACK_GAMEREADY_TOKEN`
-**Team ID:** `T0A3HPDEG1K`
+**Workspace:** <COMPANY_A> (`<workspace_a>.slack.com`)
+**Token:** `SLACK_<WORKSPACE_A>_TOKEN`
+**Team ID:** `<TEAM_ID>`
 
 ## Channel Reference
 
 | Channel | ID | Purpose | Notes |
 |---------|-----|---------|-------|
-| `#all-gameready` | `C0A3EQXBM5Z` | General announcements | Public, bot is member |
-| `#managers` | `C0A360Y6AVD` | Managers-only discussions | Private, bot added 2026-01-23 |
+| `#all-<company_a>` | `<CHANNEL_ID>` | General announcements | Public, bot is member |
+| `#managers` | `<CHANNEL_ID>` | Managers-only discussions | Private, bot added 2026-01-23 |
+| `#bugs` | `<CHANNEL_ID>` | Bug reports from employees | Public, bot created 2026-01-29 |
+| `#editing` | — | Content editing channel | Private |
 
 ---
 
-# ContentFactory Workflows
+# <PROJECT_C> Workflows
 
-**Workspace:** RawCEO (`rawceo.slack.com`)
-**Token:** `SLACK_RAWCEO_TOKEN`
+**Workspace:** <BRAND> (`<brand>.slack.com`)
+**Token:** `SLACK_<BRAND>_TOKEN`
 
 ## Channel Reference
 
 | Channel | ID | Purpose |
 |---------|-----|---------|
-| `#changelog` | `C0A8ZQL2K38` | Deployment notifications, feature releases |
-| `#bug-reports` | `C0A8LCLSV6K` | Bug reports & feature requests from team |
-| `#qa` | `C0A93LG2KCN` | QA review items |
+| `#changelog` | `<CHANNEL_ID>` | Deployment notifications, feature releases |
+| `#cf-bug-reports` | `<CHANNEL_ID>` | Bug reports & feature requests from team |
+| `#cf-qa` | `<CHANNEL_ID>` | QA review items |
 
 ---
 
 ## Post Changelog
 
-**When:** After deploying changes to ContentFactory (push to master, Vercel deploy)
+**When:** After deploying changes to <PROJECT_C> (push to master, Vercel deploy)
 
 ```bash
-source ~/.claude/.env && export SLACK_TOKEN="$SLACK_RAWCEO_TOKEN"
+source ~/.claude/.env && export SLACK_TOKEN="$SLACK_<BRAND>_TOKEN"
 
-JSON=$(printf '{"channel":"C0A8ZQL2K38","text":"%s","unfurl_links":false}' "YOUR_CHANGELOG_MESSAGE")
+JSON=$(printf '{"channel":"<CHANNEL_ID>","text":"%s","unfurl_links":false}' "YOUR_CHANGELOG_MESSAGE")
 
 curl -s -X POST "https://slack.com/api/chat.postMessage" \
   -H "Authorization: Bearer ${SLACK_TOKEN}" \
@@ -257,7 +267,7 @@ curl -s -X POST "https://slack.com/api/chat.postMessage" \
 
 **Changelog format:**
 ```
-*ContentFactory - New Features* :rocket:
+*<PROJECT_C> - New Features* :rocket:
 
 - *Feature Name* - Description
 - *Feature Name* - Description
@@ -280,12 +290,12 @@ The commit hash in the message IS the tracking mechanism (SSoT). No separate tra
 **When:** User asks to check bug reports or create GitHub issues from Slack
 
 ```bash
-source ~/.claude/.env && export SLACK_TOKEN="$SLACK_RAWCEO_TOKEN"
+source ~/.claude/.env && export SLACK_TOKEN="$SLACK_<BRAND>_TOKEN"
 
 curl -s -X POST "https://slack.com/api/conversations.history" \
   -H "Authorization: Bearer ${SLACK_TOKEN}" \
   -H "Content-Type: application/json" \
-  -d '{"channel":"C0A8LCLSV6K","limit":20}'
+  -d '{"channel":"<CHANNEL_ID>","limit":20}'
 ```
 
 **Parse response:** Look for messages not from bot (no `bot_id` field) - those are user reports.
@@ -300,9 +310,9 @@ curl -s -X POST "https://slack.com/api/conversations.history" \
 
 ```bash
 gh issue create \
-  --repo "RawCEO/ContentFactoryCC" \
+  --repo "<BRAND>/<PROJECT_C>" \
   --title "Bug: [summary from Slack message]" \
-  --body "Reported in Slack #bug-reports by @username
+  --body "Reported in Slack #cf-bug-reports by @username
 
 ---
 **Original message:**
@@ -315,9 +325,9 @@ gh issue create \
 3. Reply in Slack thread:
 
 ```bash
-source ~/.claude/.env && export SLACK_TOKEN="$SLACK_RAWCEO_TOKEN"
+source ~/.claude/.env && export SLACK_TOKEN="$SLACK_<BRAND>_TOKEN"
 
-JSON=$(printf '{"channel":"C0A8LCLSV6K","thread_ts":"%s","text":"Created GitHub issue: %s"}' "MESSAGE_TS" "ISSUE_URL")
+JSON=$(printf '{"channel":"<CHANNEL_ID>","thread_ts":"%s","text":"Created GitHub issue: %s"}' "MESSAGE_TS" "ISSUE_URL")
 
 curl -s -X POST "https://slack.com/api/chat.postMessage" \
   -H "Authorization: Bearer ${SLACK_TOKEN}" \
@@ -332,9 +342,9 @@ curl -s -X POST "https://slack.com/api/chat.postMessage" \
 **When:** After closing a GitHub issue that originated from Slack
 
 ```bash
-source ~/.claude/.env && export SLACK_TOKEN="$SLACK_RAWCEO_TOKEN"
+source ~/.claude/.env && export SLACK_TOKEN="$SLACK_<BRAND>_TOKEN"
 
-JSON=$(printf '{"channel":"C0A8LCLSV6K","text":"Resolved: %s\n\n*Fix:* %s\n*Commit:* %s"}' "ISSUE_TITLE" "FIX_SUMMARY" "COMMIT_URL")
+JSON=$(printf '{"channel":"<CHANNEL_ID>","text":"Resolved: %s\n\n*Fix:* %s\n*Commit:* %s"}' "ISSUE_TITLE" "FIX_SUMMARY" "COMMIT_URL")
 
 curl -s -X POST "https://slack.com/api/chat.postMessage" \
   -H "Authorization: Bearer ${SLACK_TOKEN}" \
@@ -344,26 +354,49 @@ curl -s -X POST "https://slack.com/api/chat.postMessage" \
 
 ---
 
-## ContentFactory Typical Workflow
+## <PROJECT_C> Typical Workflow
 
 ```
-1. Editor posts bug in #bug-reports
+1. Editor posts bug in #cf-bug-reports
    ↓
 2. User tells Claude: "Check Slack bug reports and create GitHub issues"
    ↓
-3. Claude reads #bug-reports
+3. Claude reads #cf-bug-reports
    ↓
 4. Claude creates GitHub issues
    ↓
 5. Claude replies in Slack thread with issue link
    ↓
-6. User triggers Claude to fix issue (autonomous-bug-fixing skill)
+6. User triggers Claude to fix issue (autonomous-issue-dispatch skill)
    ↓
-7. Issue resolved, Claude posts to #bug-reports
+7. Issue resolved, Claude posts to #cf-bug-reports
    ↓
 8. Claude posts changelog to #changelog
 ```
 
 ---
 
-**Last updated:** 2026-01-23
+---
+
+# <PROJECT_B> Workflows
+
+**Workspace:** <PROJECT_B> (`<workspace_b>.slack.com`)
+**Token:** `SLACK_<WORKSPACE_B>_TOKEN`
+**Team ID:** `<TEAM_ID>`
+
+## Channel Reference
+
+| Channel | ID | Purpose | Notes |
+|---------|-----|---------|-------|
+| `#bugs-general` | `<CHANNEL_ID>` | Bug reports from co-founders | Public, pre-existing channel |
+
+## Team
+
+| Name | Slack ID | Role |
+|------|----------|------|
+| <NAME> | `<USER_ID>` | Co-founder |
+| <NAME> | `<USER_ID>` | Co-founder |
+
+---
+
+**Last updated:** 2026-01-29

@@ -5,7 +5,7 @@ description: Diagnose a single GitHub issue - query logs, reproduce, collect evi
 
 # Issue Handler
 
-> **Part of:** Autonomous Bug Fixing System
+> **Part of:** Autonomous Issue Dispatch System
 > **Upstream:** `issue-dispatcher` (or direct invocation)
 > **Downstream:** CTO Agent → `qa-submission` (per-project)
 
@@ -31,7 +31,7 @@ It takes ONE issue and:
 
 ## Handler Workflow
 
-### Step 1: Assess Information
+### Step 1: Assess Information & Ensure Context
 
 ```
 Can I answer these questions from the issue?
@@ -42,7 +42,20 @@ Can I answer these questions from the issue?
 └── Source reference? (Slack thread, email for loop-back)
 ```
 
-**If basic info missing:** Check if logs can fill gaps. If not, report blocker to Dispatcher.
+**If basic info missing — self-investigate BEFORE asking humans:**
+
+1. **Query logs** — search for recent errors matching the described symptom
+2. **Search codebase** — find relevant code paths, recent commits, related changes
+3. **Check database** — look for affected records, user sessions, error patterns
+4. **Read Slack thread** — if sourced from Slack, read full thread for additional context
+5. **Check related issues** — similar past bugs may provide clues
+
+**Only after exhausting automated investigation:** If the issue is genuinely ambiguous or requires information that cannot be fetched programmatically (e.g., "what did the user see on screen?", "what was the intended behavior?"), then ask for clarification:
+- Reply in the GitHub issue (or Slack thread) with a **specific question** — not "need more info" but "Was this on mobile or desktop? The error only reproduces on viewport < 768px."
+- Add a `needs-info` label
+- Move to Blocked bucket
+- Log: "Blocked #N — asked: [specific question]"
+- Continue to next issue (don't wait)
 
 ### Step 2: Query Logs
 
@@ -298,3 +311,15 @@ CTO Agent then orchestrates:
 - QA Submission notifies reporter
 
 Handler does NOT wait for CTO completion. Handoff is fire-and-forget (Dispatcher tracks overall status).
+
+---
+
+## Related Skills
+
+| Skill | Location | Relationship |
+|-------|----------|-------------|
+| `autonomous-issue-dispatch` | `~/.claude/skills/` | Parent architecture — defines the full pipeline this skill belongs to |
+| `issue-dispatcher` | `~/.claude/skills/` | **Upstream** — Dispatcher triages queue, invokes Handler per actionable issue |
+| `strategic-cto-planner` | `~/.claude/agents/` | **Downstream** — Handler packages diagnosis, hands off to CTO Agent for implementation |
+| `bug-intake` | `~/.claude/skills/` | **Indirect upstream** — Bug Intake creates issues that eventually reach Handler via Dispatcher |
+| `qa-submission` | `.claude/skills/` (per-project) | **Downstream** (via CTO) — QA submission after CTO completes the fix |

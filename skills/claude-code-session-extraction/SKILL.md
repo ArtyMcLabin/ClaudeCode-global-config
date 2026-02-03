@@ -12,7 +12,7 @@ Extract and read previous Claude Code conversations from local storage.
 - Drive letters: `C:` → `C-`
 - Path separators: `/` or `\` → `-`
 - Example: `/home/user/myproject` → `home-user-myproject`
-- Example: `<REPOS>Foo` → `D--GitRepos-Foo`
+- Example: `<LOCAL_PATH>/MyProject` → `<DRIVE>--<PATH>-MyProject`
 
 **Platform locations:**
 | Platform | Base Path |

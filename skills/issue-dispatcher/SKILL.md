@@ -5,7 +5,7 @@ description: Triage GitHub issues queue - check hygiene, identify actionable ite
 
 # Issue Dispatcher
 
-> **Part of:** Autonomous Bug Fixing System
+> **Part of:** Autonomous Issue Dispatch System
 > **Downstream:** `issue-handler` → CTO Agent → `qa-submission` (per-project)
 
 ## Purpose
@@ -109,10 +109,10 @@ Sort issues into buckets:
 
 **Rank by (common sense):**
 1. **Severity** - security > data loss > broken feature > cosmetic
-2. **Age** - older issues first (prevent rot)
-3. **Effort** - low-hanging fruit get slight boost
-4. **Dependencies** - blockers for other issues first
-5. **User impact** - affects daily workflow > edge case
+2. **Effort** - low-hanging fruit get slight boost
+3. **Dependencies** - blockers for other issues first
+4. **User impact** - affects daily workflow > edge case
+5. **Age** (minor tiebreaker) - **newer first** — newer issues are statistically more relevant and less likely stale. Older issues have had time to become outdated or self-resolve.
 
 ### Step 5: Dispatch to Handler
 
@@ -251,16 +251,19 @@ The `github-issue-manager` agent and `issue-dispatcher` skill are **complementar
 
 | Component | Responsibility | Operations |
 |-----------|---------------|------------|
-| `github-issue-manager` | WRITE individual issues | Create, update status, verify Kanban |
-| `issue-dispatcher` | READ/TRIAGE queue | Analyze, prioritize, dispatch |
+| `github-issue-manager` | READ/WRITE individual issues | Create, update status, verify Kanban, fetch with filtering |
+| `issue-dispatcher` | TRIAGE/ORCHESTRATE queue | Analyze, prioritize, dispatch to handler |
 
-**No overlap:** github-issue-manager creates/updates issues → issue-dispatcher reads/triages them.
+**The manager owns all issue I/O** (including due-date filtering). The dispatcher is a higher-level workflow that triages and dispatches.
 
 **When to use which:**
+- Reading issues / "check the issues"? → `github-issue-manager`
 - Creating a new issue? → `github-issue-manager`
 - Updating issue status/labels? → `github-issue-manager`
-- "What should we work on?" → `issue-dispatcher`
+- "What should we work on?" / bulk triage → `issue-dispatcher`
 - "Check queue hygiene" → `issue-dispatcher`
+
+**🚨 Filtering is the manager's job.** The dispatcher inherits the manager's due-date filtering. When the dispatcher fetches issues (Step 1), it must apply the same filtering rules defined in the manager (skip future-dated issues silently).
 
 ---
 
@@ -301,3 +304,16 @@ Dispatcher behavior can be tuned per-project via CLAUDE.md:
 ```
 
 If not specified, defaults apply.
+
+---
+
+## Related Skills
+
+| Skill | Location | Relationship |
+|-------|----------|-------------|
+| `autonomous-issue-dispatch` | `~/.claude/skills/` | Parent architecture — defines the full pipeline this skill belongs to |
+| `issue-handler` | `~/.claude/skills/` | **Downstream** — Dispatcher invokes Handler for each actionable issue |
+| `bug-intake` | `~/.claude/skills/` | **Upstream** — Bug Intake creates GitHub issues that Dispatcher triages |
+| `dev-loop` | `~/.claude/skills/` | **Upstream** — Dev Loop runs Bug Intake repeatedly, feeding this queue |
+| `qa-submission` | `.claude/skills/` (per-project) | **Downstream** (via CTO) — QA submission after Handler → CTO completes fix |
+| `github-issue-manager` | Agent | **Tool** — All issue I/O (read, write, label, status) delegated to this agent |

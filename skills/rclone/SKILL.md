@@ -7,7 +7,7 @@ description: Google Drive CLI access via rclone. READ-ONLY for native Google for
 
 **Tool:** rclone (open source, MIT license, 50k+ GitHub stars)
 **Traffic:** Direct PC ↔ Google API, no third-party middleman
-**Config:** `C:\Users\Zazi\AppData\Roaming\rclone\rclone.conf`
+**Config:** `~/.config/rclone/rclone.conf` (or `%APPDATA%\rclone\rclone.conf` on Windows)
 **Remote name:** `gdrive:`
 
 ## 🚨 Critical Limitation
@@ -36,7 +36,7 @@ description: Google Drive CLI access via rclone. READ-ONLY for native Google for
 rclone lsd gdrive:
 
 # List files in a folder
-rclone ls gdrive:"GameReady (Root)"
+rclone ls gdrive:"<YOUR_FOLDER>"
 
 # Upload file
 rclone copy file.txt gdrive:folder/

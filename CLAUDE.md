@@ -1,5 +1,7 @@
 # CLAUDE.md - Global User Rules
 
+🚨 **Core principle: Do what you can, user does what you can't.** Never punt to user if you have the access/tools to try yourself first.
+
 This file provides global guidance to Claude Code across all projects.
 
 ## 🎯 Industry Standard Best Practices (MANDATORY)
@@ -46,9 +48,10 @@ When user requests conflict with best practices:
 Priority Order:
 
 1. Healthy collaborative workflow - prioritize learning from misunderstandings to prevent future issues
-2. Fix technical difficulties first - before seeking alternative methods, try to resolve the root problem  
+2. Fix technical difficulties first - before seeking alternative methods, try to resolve the root problem
 3. Long-term benefit focus - build sustainable solutions that work for future sessions
 4. Maintain continuity during autonomous tasks
+5. **After compaction:** Proactively summarize current plan/understanding before continuing work - verify alignment with user to catch context drift early
 
 ## = Environment Variable Standards
 
@@ -71,6 +74,7 @@ Priority Order:
 - Do NOT ask "do you have X installed?" before attempting
 - If the command fails with "not found" or similar → THEN ask user if they want to install it
 - This avoids unnecessary back-and-forth for tools that are usually already installed
+- **Deferred MCP tools:** If MCP tool seems missing, `ToolSearch select:mcp__name__function` before assuming unavailable
 
 ### Check Before Asking
 
@@ -80,6 +84,7 @@ Priority Order:
 - **Configuration values:** Check config files, environment variables, or documentation before asking
 - **Command availability:** Try running the command first, ask only if it fails
 - **Only ask when:** You've exhausted automated checking methods AND the answer isn't discoverable
+- **Current behavior:** Before proposing to fix or change something, verify the current behavior actually has the problem. Don't "fix" what's already working correctly.
 
 **Example:**
 - ❌ Bad: "Does `~/.claude/agents/chrome-agent.md` exist?"
@@ -94,6 +99,17 @@ When stuck on a problem and must involve the user, use Dan Martell's 1-3-1 techn
 - Compare functionality before file changes - ensure no features are lost
 - Verify preservation of features after modifications
 - Cleanup with careful dependency tracking - check imports and references
+
+### What to Commit (Don't Skip These)
+
+**Always commit IDE/workspace config:**
+- `.vscode/` folder (tasks.json, settings.json, extensions.json, launch.json)
+- Workspace files (*.code-workspace)
+- Editor configs (.editorconfig)
+
+**Why:** These enable consistent dev experience across sessions and make Claude Code more effective (build tasks, debug configs, etc.)
+
+**When batch-committing repos:** Don't skip IDE config as "not worth committing" - it IS worth committing.
 
 ### 🚨 Git Commands That Destroy Uncommitted Work
 
@@ -263,31 +279,55 @@ const copyFullStatusToClipboard = async () => {
 
 ## LLM Browser - Last Resort Only
 
-**Priority Order for Task Execution:**
+🚨 **CLI/MCP/API first, browser last.** Only use browser when programmatic approaches fail or task genuinely requires visual interaction (OAuth, CAPTCHA, visual verification).
 
-1. **ALWAYS try CLI tools FIRST** - Use Bash, WebFetch, WebSearch, gh CLI, playwright, or other available tools
-2. **Attempt autonomous execution** - Fully exhaust all programmatic approaches
-3. **LLM Browser prompt as LAST RESORT** - Only when CLI tools fail or task is clearly impossible to automate
+### MCP vs Browser Fallback Policy
 
-**When to use LLM Browser prompts (ONLY after CLI attempts fail):**
+🚨 **For Google products with MCP tools (Gmail, Tasks, Sheets, Calendar, Workspace):**
+1. **MCP FIRST** - Always use MCP tools as primary method
+2. **If MCP lacks a feature** - Clarify the limitation precisely (app vs API), offer workaround, research alternatives only if user wants
+3. **If MCP fails entirely** - ASK before Chrome: "MCP failed. Try via Chrome (misclick risk) or investigate the MCP issue?"
+4. **Offer MCP fix** when feasible - missing parameter, auth issue, tool bug
 
-- Interactive website navigation that bypasses automation protections
-- JavaScript-heavy sites blocking programmatic access
-- Visual inspection requiring human-like browser behavior
-- Multi-step authentication flows that block automation
-- Tasks that explicitly failed via WebFetch/Playwright/CLI tools
+**When user pushes back on a limitation:** Don't assume you were wrong. Clarify the nuance (app vs API, UI vs programmatic) and offer the workaround immediately.
 
-**What Claude should run autonomously via CLI:**
+**Why no auto-Chrome fallback:** Chrome automation frequently causes misclicks → fires, unintended actions. MCP failures often indicate fixable issues. User should decide if Chrome risk is worth it.
 
-- All bash commands (git, npm, docker, etc.)
-- Web content fetching (WebFetch, WebSearch)
-- GitHub operations (gh CLI)
-- File operations (Read, Write, Edit, Grep, Glob)
-- Testing and QA (playwright, pytest, etc.)
-- Build and deploy operations
-- API calls and scripting
+**Chrome automation is appropriate for:** Sites without MCP/API access, UI-specific features APIs can't do, user explicitly approves Chrome for that task.
 
-**Rule**: If you can run it via CLI/tools - DO IT. Browser LLM is for when automation fails, not as a first choice.
+## 📧 Gmail MCP (Always Delegate)
+
+🚨 **NEVER use `mcp__gmail__*` or `mcp__google-workspace__gmail_*` tools directly.** Always delegate to gmail-agent via Task tool.
+
+**Why:** Gmail MCP responses return verbose JSON (full email bodies, metadata, label arrays) that bloats main context. The gmail-agent processes them in its own context window, returning only concise summaries with msgId/threadId for follow-up.
+
+**Delegation pattern:**
+```
+Task tool → subagent_type: "general-purpose" (or custom if registered)
+  prompt: "Search Gmail for unread inbox emails, return structured summaries"
+  model: haiku
+```
+
+**The gmail-agent owns:** search, read, modify/archive, filter creation, send/reply, batch operations, attachment download. See `~/.claude/agents/gmail-agent.md` for full tool matrix.
+
+**Exception:** If you need ONE quick archive/modify and the msgId is already known, a direct MCP call is acceptable to avoid agent overhead.
+
+## 📊 Google Sheets MCP (Always Delegate)
+
+🚨 **NEVER use `mcp__google-sheets__*` or `mcp__google-workspace__sheets_*` tools directly.** Always delegate to sheets-agent via Task tool.
+
+**Why:** Sheets MCP responses return full grid data (cell arrays, metadata) that bloat main context — a 5-row read can be 13k+ tokens. The sheets-agent processes them in its own context window, returning only concise summaries and formatted tables.
+
+**Delegation pattern:**
+```
+Task tool → subagent_type: "general-purpose"
+  prompt: "Read the 'Staff' tab from spreadsheet [ID], return as markdown table"
+  model: haiku
+```
+
+**The sheets-agent owns:** read data, write/update cells, search, batch operations, sheet management, formatting. See `~/.claude/agents/sheets-agent.md` for full tool matrix.
+
+**Exception:** Small metadata calls (`list_sheets`, `sheets_getMetadata`) that return minimal data are acceptable directly.
 
 ## 🌐 Chrome MCP (Always Delegate)
 
@@ -296,6 +336,8 @@ const copyFullStatusToClipboard = async () => {
 **Why:** Screenshots and DOM trees consume massive context. The chrome-agent processes them in its own context window, returning only concise results.
 
 **URL opening:** When user asks to "open" a URL, just launch it with `start <url>` (opens in default browser), not chrome-agent.
+
+**🚨 Chrome not running?** Run `powershell -Command "if (-not (Get-Process chrome -EA 0)) { Start-Process chrome; Start-Sleep 3 }"` before MCP ops.
 
 **🚨 API vs Browser UI:** When delegating tasks where API can't do something (e.g., bot can't see private Slack channels), explicitly tell chrome-agent: "Use BROWSER UI only, do NOT use API calls - the user is logged in and can see things the bot API cannot."
 
@@ -374,8 +416,8 @@ Chrome-agent MUST report the method used for each action:
 
 ## 📂 Local Git Repository Locations
 
-- `<YOUR_REPOS_PATH>` - Primary local git repositories
-- `<YOUR_SECONDARY_REPOS_PATH>` - Secondary local git repositories (NVME drive)
+- `<LOCAL_PATH>` - Primary local git repositories
+- `<LOCAL_PATH>` - Secondary local git repositories (NVME drive)
 
 ## 📁 Google Drive CLI Access
 
@@ -396,19 +438,42 @@ When user asks to "add something to CLAUDE.md":
 
 For admin tasks (email, calendar, Slack, contacts): invoke Claude Code in the Personal Assistant repository via Task tool.
 
+## 🚨 GitHub Issues — Always Delegate
+
+For ANY GitHub issue operations (list, triage, create, update, report, survey), **ALWAYS use the `github-issue-manager` subagent** via Task tool. Never use `gh` CLI directly for issue work.
+
+🚨 **Before closing issues:** Re-read the full issue body and verify every DoD item, phase, and evaluation date is complete. If any item remains, keep it open.
+
+🚨 **Before fixing reported problems:** Verify the reporter's environment matches yours — check their config version, tools, and enforcement mechanisms before assuming the fix is on your end.
+
+## 🚨 Subagent Git Autonomy Limits
+
+When delegating to subagents (developer, chrome-agent, etc.):
+
+- **Commits:** Subagent MAY commit locally
+- **Pushes:** Subagent MUST NEVER push unless the parent prompt explicitly says "push". "Commit only" or "do not push" = local commit only
+- **After subagent returns:** Parent MUST run `git log --oneline -3` to verify actual state before telling user anything about what was committed/pushed
+
 ## 🚨 Database Migration Tools - Fix Root Causes, Never Workaround
 
 **If `drizzle-kit migrate` (or any migration tool) fails:**
 
 1. **NEVER bypass with raw SQL** (psql, direct queries, etc.)
 2. **NEVER manually apply migrations** outside the tooling
-3. **FIX THE ROOT CAUSE** of why the migration tool is failing:
+3. **NEVER insert fake/manual entries into migration tracking tables**
+4. **FIX THE ROOT CAUSE** of why the migration tool is failing:
    - Debug the migration script
    - Fix driver/connection issues
    - Update dependencies if needed
    - Modify migration files to be compatible
-4. **Workarounds create drift** between schema.ts, migrations, and database state
-5. **The migration tool is the SSoT** - bypassing it breaks the entire system
+5. **Workarounds create drift** between schema.ts, migrations, and database state
+6. **The migration tool is the SSoT** - bypassing it breaks the entire system
+
+**Approved fix for "table already exists" errors:**
+- Make migrations idempotent: `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`
+- Wrap constraints in `DO $$ BEGIN ... EXCEPTION WHEN duplicate_object THEN null; END $$;`
+- Fix table ownership if needed: `ALTER TABLE x OWNER TO app_user;`
+- Then run the migration tool properly - it will execute and record correct hashes
 
 **Why this matters:**
 - Manual SQL bypasses migration tracking → future migrations break
@@ -419,3 +484,23 @@ For admin tasks (email, calendar, Slack, contacts): invoke Claude Code in the Pe
 - Migration tracking table: `drizzle.__drizzle_migrations` (in the `drizzle` schema, NOT `public`)
 - Always check `drizzle` schema when debugging migrations
 - Don't confuse with `public` schema tables
+
+## 🚨 CI/CD is Mandatory - Never Bypass
+
+**If a project has CI/CD configured:**
+
+1. **NEVER SCP files directly to servers** - let CI/CD upload them
+2. **NEVER run build/migrate commands manually on servers** - let CI/CD run them
+3. **NEVER rebuild Docker images manually** - let CI/CD rebuild them
+4. **ALL changes go through git push → CI/CD pipeline**
+
+**The only manual server commands allowed:**
+- Diagnostic commands (docker logs, ps, df, etc.)
+- Emergency rollbacks (with user permission)
+- One-time fixes that get codified into CI/CD afterwards
+
+**If CI/CD fails:**
+1. Check CI/CD logs first (gh run view)
+2. Fix the root cause in code/config
+3. Push fix through CI/CD
+4. NEVER work around by doing manually what CI/CD should do
