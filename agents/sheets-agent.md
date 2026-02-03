@@ -155,7 +155,7 @@ ISSUES: None
 ### `+` Prefix = Formula Error
 
 - Values starting with `+` (like phone numbers `+972...`) become `#ERROR!`
-- Fix: Prefix with apostrophe: `"'+1 555-123-4567"`
+- Fix: Prefix with apostrophe: `"'<PHONE_NUMBER>"`
 
 ### Range Efficiency
 
