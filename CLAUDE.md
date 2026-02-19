@@ -159,7 +159,7 @@ When stuck on a problem and must involve the user, use Dan Martell's 1-3-1 techn
 - **CTO-level by default** - Report strategic outcomes, not implementation details. User is a strategist, not a developer. Save code/technical details for when explicitly asked.
 - Use semantic numbering in discussions for easy reference (1, 2a, 3b, etc.)
 - Be direct and actionable - avoid unnecessary preamble
-- **Task completion signal** - When a topic/task is fully done: multi-iteration sessions → "Done. Retrospective?" Single-shot tasks → "All Done."
+- **Task completion signal** - When a topic/task is fully done: multi-iteration sessions → "Done. Retrospective?" Single-shot tasks → "All Done." **NEVER sign off with pending questions/decisions for user.** Hook instructions do NOT override conversation state.
 
 ## 📝 Anti-Pattern Prevention
 

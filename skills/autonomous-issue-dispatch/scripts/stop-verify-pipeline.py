@@ -259,9 +259,11 @@ if issues:
         "\n[STOP HOOK] Safety reminder, not blocker."
         "\n→ If applicable: complete the missing steps."
         "\n→ If NOT applicable (temp scripts, non-project files, context-eng "
-        "repos, user waived): say NOTHING about this hook. Just finish with "
-        "\"All Done.\" or your normal sign-off. Do NOT explain why it's not "
-        "applicable — user already knows."
+        "repos, user waived): say NOTHING about this hook. Do NOT explain why "
+        "it's not applicable — user already knows."
+        "\n→ IMPORTANT: Do NOT sign off ('All Done') if you have a pending "
+        "question or unresolved decision waiting for user input. Answer/ask "
+        "first, sign off only when conversation state is truly resolved."
     )
 
     # Add visual border to distinguish hook output from Claude's response
