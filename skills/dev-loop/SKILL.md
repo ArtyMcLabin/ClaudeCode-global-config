@@ -322,7 +322,8 @@ After each iteration, maintain a running log in chat:
 ── Iteration 1 (14:30) ──────────────────────
 • Fixed #134 "caption not saving" → tests passed → deployed
 • Closed #131 (verified by reporter)
-• Deferred: "redesign sidebar" (big work)
+• Deferred (NEW): "redesign sidebar" (big work)
+• Carried: #135 (billing), #202 (timestamps)
 • Dispatched: #172 (search rearchitecture), #165 (train button)
 ⏳ Waiting 5 minutes...
 
@@ -347,22 +348,29 @@ Log summary in chat only (NO Slack post).
 ```
 Dev loop complete. N iterations. (YYYY-MM-DD HH:MM — HH:MM local)
 
-Fixed (this session): #134, #135, #137
-Verified: #131, #134
-Pending verification: #137 (awaiting reporter)
+Actions: Fixed #134, #135, #137. Pinged <TEAMMATE> on 5 overdue QA items. Deployed.
+No activity: 0 new bugs, 0 QA responses
 
 Dispatched & tracking:
   #172 search rearchitecture → merged, QA submitted, awaiting <TEAMMATE>
   #165 train button → in progress (3 commits, no PR yet)
-  #134 tinder swipe → no activity
 
-Deferred (needs owner): "redesign sidebar"
+Deferred (from before): #135 (billing), #202 (timestamps)
 
 _Summary generated: YYYY-MM-DD HH:MM local_
 ```
 
+**Format rules:**
 - First line: session time range (start — end)
 - Last line: when this specific summary text was generated (use system clock at time of writing)
+- **Lead with actions taken** (fixes, pings, deploys) — not "nothing happened"
+- **"No activity" = one line** for empty scans (0 new bugs, 0 QA responses, etc.)
+- **Skip empty categories entirely** — no "Fixed: none", "Closed: none"
+- **Don't mention irrelevant assessments** — issues you looked at but aren't actionable are noise the reader doesn't care about
+- **Deferred items — show once, never duplicate:**
+  - **"Deferred (NEW):"** only when items were first deferred THIS session
+  - **"Deferred (from before):"** for carried items from previous sessions
+  - If neither category has items, skip the line entirely
 
 ### Persistent Session Log
 
@@ -382,21 +390,22 @@ Session logs are ephemeral (in-chat only) by default. To enable cross-session co
 
 **Entry format (overwritten each iteration, prepended as newest-first):**
 1. Update the current session entry in `memory/dev-loop-log.md`
-2. Use this compact format:
+2. Use this compact format — **only include categories that have content, skip empty ones:**
 ```
 ## YYYY-MM-DD HH:MM — HH:MM Trigger Name (N iterations, ~duration)
-**Fixed:** #N (brief desc), #M (brief desc)
-**Closed:** #N, #M (reason)
-**QA Submitted:** #N, #M
-**Pending QA:** #N, #M, ...
-**Board Cleanup:** #N, #M → new status
-**Deferred:** #N (reason), ...
-**Answered:** #N (what), ...
-**Lessons:** (brief or "none")
+**Actions:** Fixed #N (brief desc), pinged <TEAMMATE>, deployed X
+**No activity:** 0 new bugs, 0 QA responses
+**Deferred (NEW):** #N (reason)
+**Deferred (from before):** #N (reason), #M (reason)
+**Lessons:** (brief)
 **Last updated:** YYYY-MM-DD HH:MM local
 ```
 - Header: `HH:MM — HH:MM` = session start — session end (or "ongoing" if mid-session)
 - Footer: `Last updated` = system clock at time of writing this entry (crash-safe: if session dies, this shows when the last iteration completed)
+- **Actions** = lead line, always present. What you DID (fixes, closes, pings, deploys)
+- **No activity** = one line for empty scans. Skip if there WAS activity
+- **Skip empty categories** — no "Fixed: none", "Closed: none", "Deferred (NEW): none"
+- **Don't log irrelevant assessments** — issues you looked at but aren't actionable are noise
 3. **Rotation:** If the file has more than 10 session entries, trim the oldest ones.
 
 **Why:** Without persistence, each session starts blind — re-discovers the same pending QA items, re-checks stalled dispatches, and loses track of what was deferred. 30 seconds of writing on exit saves 5+ minutes of redundant scanning on next start.
@@ -601,7 +610,7 @@ Local overrides may add additional response deadline behavior (e.g., escalating 
 
 ## Local Override Pattern
 
-Repos can provide `.claude/skills/dev-loop/SKILL.md` to extend this skill. Common overrides:
+Repos can provide `.claude/skills/dev-loop-override/SKILL.md` to extend this skill. The `-override` suffix makes the inheritance relationship explicit in the skill list. Common overrides:
 
 - **Additional scan targets** (e.g., separate QA channel)
 - **Dedicated QA person** (e.g., always mention a specific team member)

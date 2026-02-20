@@ -16,26 +16,26 @@ Claude Code receives issues (bugs OR features), diagnoses them, implements fixes
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  CHANNELS (Slack/Email/GitHub/etc.)                             │
-│  #bug-reports: "Caption generation is broken"                   │
-│  #qa-review: "Rejected - still broken" / "Approved"             │
+│  CHANNEL (Slack — unified bug + QA per workspace)               │
+│  Bug report: "Caption generation is broken"                     │
+│  QA response: thread reply "Approved" / "Rejected"              │
 └─────────────────────┬───────────────────────────────────────────┘
                       │
                       ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  BUG INTAKE (per-project)                                       │
-│  Scans BOTH channels for actionable items:                      │
+│  Scans channel threads for actionable items:                    │
 │                                                                 │
-│  From #bug-reports (new issues):                                │
+│  New top-level messages (bug reports):                           │
 │  - Create GitHub issue with source reference                    │
-│  - Notify reporter: "Documented as #123"                        │
+│  - Reply in thread: "Documented as #123"                        │
 │  - Route to → Dispatcher                                        │
 │                                                                 │
-│  From #qa-review (QA responses):                                │
+│  Thread replies (QA responses):                                 │
 │  - Rejection: Update issue → Route directly to CTO (skip Handler)│
-│  - Approval: Close issue → Notify reporter in #bug-reports      │
+│  - Approval: Close issue → Add checkmark to thread              │
 │                                                                 │
-│  Skill: .claude/skills/bug-intake/SKILL.md                      │
+│  Skill: .claude/skills/bug-intake-override/SKILL.md             │
 └─────────────────────┬───────────────────────────────────────────┘
                       │
         ┌─────────────┴─────────────┐
@@ -72,16 +72,16 @@ Claude Code receives issues (bugs OR features), diagnoses them, implements fixes
                       ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  QA SUBMISSION (per-project)                                    │
-│  - Post to #qa-review: "Fix ready for QA"                       │
+│  - Reply in bug thread: "Fix ready for QA" + test steps         │
 │  - Include source reference + issue link                        │
-│  - Human responds in thread (approve/reject)                    │
+│  - Human responds in same thread (approve/reject)               │
 │  Skill: .claude/skills/qa-submission/SKILL.md                   │
 └─────────────────────────────────────────────────────────────────┘
                       │
                       ▼
             ┌─────────────────┐
             │  Human reviews  │
-            │  in #qa-review  │
+            │  in thread      │
             └────────┬────────┘
                      │
      ┌───────────────┴───────────────┐
@@ -94,8 +94,8 @@ Claude Code receives issues (bugs OR features), diagnoses them, implements fixes
      │                               │
      ▼                               ▼
   Close issue                   Route to CTO
-  Notify reporter               (skip Handler)
-  in #bug-reports               Iterate on fix
+  Add checkmark                 (skip Handler)
+  to thread                     Iterate on fix
 ```
 
 ---
@@ -125,11 +125,11 @@ Claude Code receives issues (bugs OR features), diagnoses them, implements fixes
 
 | Workspace | Slack Domain | Bug Channel | Repos |
 |-----------|-------------|-------------|-------|
-| **<BRAND>** | `<BRAND>` | `#cf-bug-reports` + `#cf-qa` | <PROJECT_C> |
+| **<BRAND>** | `<BRAND>` | `#cf-bugs-qa` (unified) | <PROJECT_C> |
 | **<COMPANY_A> HQ** | `<WORKSPACE>` | `#bugs` | <REPO_NAME>, <REPO_NAME>, <REPO_NAME> |
 | **<PROJECT_B>** | `<WORKSPACE_B>` | `#bugs-general` | <REPO_NAME>, <PROJECT_B>_Website, <REPO_NAME>-schema |
 
-**<REPO_NAME> special case:** When invoked locally, scans Google Sheet (manager feedback) instead of Slack. When dispatched externally, handles Slack-routed issue + optionally scans Sheet with user approval. See `<LOCAL_PATH>\<REPO_NAME>\.claude\skills\bug-intake\SKILL.md`.
+**<REPO_NAME> special case:** When invoked locally, scans Google Sheet (manager feedback) instead of Slack. When dispatched externally, handles Slack-routed issue + optionally scans Sheet with user approval. See `<LOCAL_PATH>\<REPO_NAME>\.claude\skills\bug-intake-override\SKILL.md`.
 
 ### Unified Pipeline
 
@@ -204,9 +204,9 @@ Bug Intake can be triggered in multiple ways:
 
 **Manual trigger commands:**
 ```
-"Scan for new bug reports"        → Check #bug-reports for unaddressed items
-"Check QA responses"              → Check #qa-review for approve/reject responses
-"Run intake scan"                 → Check both channels
+"Scan for new bug reports"        → Check bug channel for new unaddressed messages
+"Check QA responses"              → Check threads for QA approve/reject responses
+"Run intake scan"                 → Full scan (new bugs + thread responses)
 ```
 
 ---
@@ -215,19 +215,19 @@ Bug Intake can be triggered in multiple ways:
 
 The reporter receives updates at key milestones:
 
-| Milestone | Who Notifies | Channel | Message |
-|-----------|--------------|---------|---------|
-| Bug documented | Bug Intake | #bug-reports | "Created issue #123" |
-| Fix in QA | QA Submission | #qa-review | "Ready for QA: [issue link]" |
-| QA approved | Bug Intake | #bug-reports | "Resolved and deployed" |
-| QA rejected | Bug Intake | #qa-review | Acknowledgment, then routes to CTO |
+| Milestone | Who Notifies | Where | Message |
+|-----------|--------------|-------|---------|
+| Bug documented | Bug Intake | Thread reply | "Created issue #123" |
+| Fix in QA | QA Submission | Thread reply | "Fix ready for QA" + test steps |
+| QA approved | Bug Intake | Thread reply + checkmark | "Resolved and deployed" |
+| QA rejected | Bug Intake | Thread reply | Acknowledgment, then routes to CTO |
 
-**Channel flow:**
-1. Reporter posts in #bug-reports → Bug Intake replies with issue link
-2. Fix ready → QA Submission posts in #qa-review
-3. Human responds in #qa-review (approve/reject)
+**Unified thread flow (all in same bug thread):**
+1. Reporter posts bug → Bug Intake replies in thread with issue link
+2. Fix ready → QA Submission replies in same thread with test steps
+3. QA reviewer responds in same thread (approve/reject)
 4. Bug Intake sees response:
-   - Approved → notify reporter in #bug-reports, close issue
+   - Approved → close issue, add checkmark to thread
    - Rejected → route to CTO for iteration
 
 **Source reference storage:** Bug Intake stores original report location (Slack thread URL) in GitHub issue metadata. This enables loop-back to the correct thread.
@@ -242,19 +242,19 @@ The reporter receives updates at key milestones:
 "Run intake scan" / "Scan for bug reports and QA responses"
 ```
 
-1. Bug Intake scans #bug-reports for new unaddressed reports
-2. Bug Intake scans #qa-review for approve/reject responses
+1. Bug Intake scans bug channel for new unaddressed top-level messages
+2. Bug Intake scans threads for QA approve/reject responses
 3. New reports → create issues → Dispatcher → Handler → CTO
 4. Rejections → route directly to CTO (skip Handler)
-5. Approvals → close issues → notify reporter
+5. Approvals → close issues, add checkmark to thread
 
 ### Manual Trigger Points
 
 | Command | Starts At | Use When |
 |---------|-----------|----------|
-| "Run intake scan" | Bug Intake | Full channel scan |
-| "Scan for new bug reports" | Bug Intake | Only check #bug-reports |
-| "Check QA responses" | Bug Intake | Only check #qa-review |
+| "Run intake scan" | Bug Intake | Full channel scan (new bugs + QA responses) |
+| "Scan for new bug reports" | Bug Intake | Only check for new top-level messages |
+| "Check QA responses" | Bug Intake | Only check threads for QA responses |
 | "Check pending issues" / "Find low-hanging fruit" | Dispatcher | Triage GitHub queue |
 | "Diagnose issue #71" | Handler | Investigate specific issue |
 | "Fix issue #71" | CTO Agent | Known diagnosis, ready to fix |
@@ -296,12 +296,12 @@ For autonomous issue dispatch to work, each repo needs:
 ### Skills (Context Engineering)
 
 ```
-[ ] .claude/skills/bug-intake/SKILL.md - workspace config (channel ID, QA mode, deploy mode, repo routing)
+[ ] .claude/skills/bug-intake-override/SKILL.md - workspace config (channel ID, QA mode, deploy mode, repo routing)
     Global base: ~/.claude/skills/bug-intake/SKILL.md
-    Override example: <PROJECT_C>/.claude/skills/bug-intake/SKILL.md
-[ ] .claude/skills/dev-loop/SKILL.md - continuous scanning override (optional)
+    Override example: <PROJECT_C>/.claude/skills/bug-intake-override/SKILL.md
+[ ] .claude/skills/dev-loop-override/SKILL.md - continuous scanning override (optional)
     Global base: ~/.claude/skills/dev-loop/SKILL.md
-    Override example: <PROJECT_C>/.claude/skills/dev-loop/SKILL.md
+    Override example: <PROJECT_C>/.claude/skills/dev-loop-override/SKILL.md
 [ ] .claude/skills/qa-submission/SKILL.md - QA process (required for repos with dedicated QA channels; other repos rely on deploy-gate or approval-required mode)
 ```
 
@@ -340,11 +340,11 @@ For autonomous issue dispatch to work, each repo needs:
 **Symptom:** Fix doesn't work, introduces regression, incomplete.
 
 **Recovery:**
-1. Human posts rejection in #qa-review thread
+1. Human posts rejection as thread reply in bug channel
 2. Bug Intake sees rejection during next scan (or webhook trigger)
 3. Bug Intake routes directly to CTO (skips Handler - diagnosis still valid)
 4. CTO iterates on fix
-5. QA Submission re-posts to #qa-review
+5. QA Submission re-posts in same thread with updated test steps
 6. Cycle repeats until approved
 
 ### Reporter Unresponsive
@@ -486,7 +486,7 @@ QA RULES:
 |-------|----------|---------|
 | issue-dispatcher | `~/.claude/skills/issue-dispatcher/` | Queue triage |
 | issue-handler | `~/.claude/skills/issue-handler/` | Diagnosis |
-| bug-intake | `~/.claude/skills/bug-intake/` (global) + `.claude/skills/bug-intake/` (per-project config) | Intake + notification |
-| dev-loop | `~/.claude/skills/dev-loop/` (global) + `.claude/skills/dev-loop/` (per-project override) | Continuous scanning loop |
+| bug-intake | `~/.claude/skills/bug-intake/` (global) + `.claude/skills/bug-intake-override/` (per-project config) | Intake + notification |
+| dev-loop | `~/.claude/skills/dev-loop/` (global) + `.claude/skills/dev-loop-override/` (per-project override) | Continuous scanning loop |
 | qa-submission | `.claude/skills/qa-submission/` (per-project) | QA + notification |
 | strategic-cto-planner | `~/.claude/agents/` | Fix orchestration |

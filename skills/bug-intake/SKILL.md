@@ -15,7 +15,7 @@ Scan Slack channels for bug reports across **any workspace** and:
 1. **Small bugs** -> Fix immediately, communicate result
 2. **Big work** -> Create GitHub issue, defer to owner
 
-This is the **generalized flow**. Each repo provides a local `.claude/skills/bug-intake/SKILL.md` with workspace config. Local skills extend this flow with `## Override:` sections — they never replace it.
+This is the **generalized flow**. Each repo provides a local `.claude/skills/bug-intake-override/SKILL.md` with workspace config. Local skills extend this flow with `## Override:` sections — they never replace it.
 
 **Trigger:** "Scan for bug reports" / "Run intake scan" / "Check bugs"
 
@@ -46,7 +46,7 @@ The `⚡` emoji indicates real-time daemon trigger (vs `👀` alone from cron). 
 
 ## Config Resolution (Inheritance Model)
 
-1. Read the local `.claude/skills/bug-intake/SKILL.md` in the current repo
+1. Read the local `.claude/skills/bug-intake-override/SKILL.md` in the current repo
 2. If no local skill exists -> error: "This repo has no bug-intake config."
 3. Load this global skill as the **base flow**
 4. Apply local skill as **override** — local sections marked `## Override:` augment or replace the corresponding global step
@@ -58,7 +58,7 @@ The `⚡` emoji indicates real-time daemon trigger (vs `👀` alone from cron). 
 
 ## Workspace Config Schema
 
-Each repo's local bug-intake SKILL.md must provide these values in a markdown table:
+Each repo's local bug-intake-override SKILL.md must provide these values in a markdown table:
 
 | Key | Required | Description |
 |-----|----------|-------------|
@@ -146,7 +146,7 @@ GH_Coordinator is the for-loop wrapper — it runs the same bug-intake flow acro
 4. Create GitHub issue in the matched repo(s) per Step 5
 
 **Step B: Discover repo-local overrides**
-1. For each repo in the registry, check if `{local_path}/.claude/skills/bug-intake/SKILL.md` exists
+1. For each repo in the registry, check if `{local_path}/.claude/skills/bug-intake-override/SKILL.md` exists
 2. If it does, read its Workspace Config table — it may define additional channels not in the Shared Channel Registry
 3. Scan those channels using the local override's rules (QA mode, emoji nuances, communication overrides, etc.)
 4. Apply all `## Override:` sections from the local skill on top of the global flow
@@ -162,7 +162,7 @@ GH_Coordinator is the for-loop wrapper — it runs the same bug-intake flow acro
 ### Step 1: Load Config
 
 ```
-Read local .claude/skills/bug-intake/SKILL.md
+Read local .claude/skills/bug-intake-override/SKILL.md
 Extract workspace config table values
 Resolve Slack token via ~/.claude/skills/slack/SKILL.md (workspace -> token mapping)
 Check for ## Override: sections to apply after each global step
